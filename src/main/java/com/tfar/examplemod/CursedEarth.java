@@ -97,7 +97,7 @@ public class CursedEarth {
     public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
       // register a new block here
       event.getRegistry().register(new CursedEarthBlock(Block.Properties.create(Material.ORGANIC)
-              .hardnessAndResistance(.6f).tickRandomly()).setRegistryName("cursed_earth"));
+              .hardnessAndResistance(.6f)).setRegistryName("cursed_earth"));
     }
     @SubscribeEvent
     public static void Block(final RegistryEvent.Register<Item> event) {
