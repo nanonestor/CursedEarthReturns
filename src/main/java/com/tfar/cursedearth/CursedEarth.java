@@ -1,4 +1,4 @@
-package com.tfar.examplemod;
+package com.tfar.cursedearth;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;

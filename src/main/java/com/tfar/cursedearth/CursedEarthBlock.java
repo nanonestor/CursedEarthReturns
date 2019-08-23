@@ -1,4 +1,4 @@
-package com.tfar.examplemod;
+package com.tfar.cursedearth;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -19,7 +19,7 @@ import net.minecraft.world.server.ServerWorld;
 import java.util.List;
 import java.util.Random;
 
-import static com.tfar.examplemod.CursedEarth.Config.*;
+import static com.tfar.cursedearth.CursedEarth.Config.*;
 
 public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
   public CursedEarthBlock(Properties properties) {
