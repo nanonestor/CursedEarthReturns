@@ -1,5 +1,6 @@
 package com.tfar.cursedearth;
 
+import com.google.common.collect.Lists;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.material.Material;
@@ -10,6 +11,7 @@ import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -21,6 +23,8 @@ import net.minecraftforge.registries.ObjectHolder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(CursedEarth.MODID)
@@ -46,11 +50,12 @@ public class CursedEarth {
     public static ForgeConfigSpec.IntValue minTickTime;
     public static ForgeConfigSpec.IntValue maxTickTime;
     public static ForgeConfigSpec.IntValue mobCap;
-    public static ForgeConfigSpec.BooleanValue ignoreLightLevels;
+    public static ForgeConfigSpec.BooleanValue forceSpawn;
     public static ForgeConfigSpec.BooleanValue diesInSunlight;
     public static ForgeConfigSpec.BooleanValue naturallySpreads;
     public static ForgeConfigSpec.IntValue spawnRadius;
     public static ForgeConfigSpec.BooleanValue witherRose;
+    public static ForgeConfigSpec.ConfigValue<List<String>> blacklistedEntities;
 
     Config(ForgeConfigSpec.Builder builder) {
       builder.push("general");
@@ -64,9 +69,9 @@ public class CursedEarth {
       mobCap = builder
               .comment("max number of mobs before cursed earth stops spawning")
               .defineInRange("mob cap", 250,1,Integer.MAX_VALUE);
-      ignoreLightLevels = builder
-              .comment("do mobs ignore light level requirements for spawning")
-              .define("ignore light levels", false);
+      forceSpawn = builder
+              .comment("Force spawns to occur regardless of conditions such as light level and elevation")
+              .define("force spawns", false);
       diesInSunlight = builder
               .comment("does cursed earth die in sunlight")
               .define("die in sunlight", true);
@@ -79,6 +84,9 @@ public class CursedEarth {
       spawnRadius = builder
               .comment("minimum distance cursed earth has to be away from players before it spawns mobs")
               .defineInRange("spawn radius", 1,1,Integer.MAX_VALUE);
+      blacklistedEntities = builder
+              .comment("What entities aren't allowed to spawn from cursed earth ex: [\"minecraft:creeper\"]")
+              .define("entity blacklist", Lists.newArrayList(),String.class::isInstance);
       builder.pop();
     }
   }
@@ -107,9 +115,9 @@ public class CursedEarth {
   }
 
   @Mod.EventBusSubscriber
-  public static class rose {
+  public static class Rose {
     @SubscribeEvent
-    public static void ros(PlayerInteractEvent.RightClickBlock e){
+    public static void applyRose(PlayerInteractEvent.RightClickBlock e){
       if (!Config.witherRose.get())return;
       PlayerEntity p = e.getPlayer();
       World w = p.world;
