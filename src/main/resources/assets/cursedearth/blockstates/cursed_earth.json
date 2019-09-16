@@ -1,11 +1,11 @@
 {
   "variants": {
     "snowy=false": [
-      { "model": "cursedearth:block/cursed_earth" },
-      { "model": "cursedearth:block/cursed_earth", "y": 90 },
-      { "model": "cursedearth:block/cursed_earth", "y": 180 },
-      { "model": "cursedearth:block/cursed_earth", "y": 270 }
+      { "model": "block/grass_block" },
+      { "model": "block/grass_block", "y": 90 },
+      { "model": "block/grass_block", "y": 180 },
+      { "model": "block/grass_block", "y": 270 }
     ],
-    "snowy=true": { "model": "block/grass_block_snow" }
+    "snowy=true":  { "model": "block/grass_block_snow" }
   }
 }

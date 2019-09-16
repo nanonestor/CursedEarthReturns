@@ -1,12 +1,19 @@
 package com.tfar.cursedearth;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.SpreadableSnowyDirtBlock;
+import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.entity.*;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.tags.Tag;
+import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.Hand;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
@@ -14,14 +21,12 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.DifficultyInstance;
-import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -32,6 +37,9 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
   public CursedEarthBlock(Properties properties) {
     super(properties);
   }
+
+  public static final Tag<Block> spreadable = new BlockTags.Wrapper(new ResourceLocation(CursedEarth.MODID, "spreadable"));
+  public static final Tag<EntityType<?>> blacklisted_entities = new EntityTypeTags.Wrapper(new ResourceLocation(CursedEarth.MODID, "blacklisted"));
 
   @Override
   public void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean isMoving) {
@@ -90,12 +98,12 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
       if (isInDaylight(world, pos) && diesInSunlight.get()) {
         world.setBlockState(pos, Blocks.DIRT.getDefaultState());
       } else {
-        if (world.getLight(pos.up()) <= 7 && naturallySpreads.get()) {
+        if (world.getLight(pos.up()) <= 7 && naturallySpreads.get() && world.getBlockState(pos.up()).isAir(null,null)) {
           BlockState blockstate = this.getDefaultState();
           for (int i = 0; i < 4; ++i) {
-            BlockPos blockpos = pos.add(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
-            if (world.getBlockState(blockpos).getBlock() == Blocks.DIRT) {
-              world.setBlockState(blockpos, blockstate.with(SNOWY, world.getBlockState(blockpos.up()).getBlock() == Blocks.SNOW));
+            BlockPos pos1 = pos.add(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
+            if (world.getBlockState(pos1).getBlock().isIn(spreadable) && world.getBlockState(pos1.up()).isAir(world,pos1.up())) {
+              world.setBlockState(pos1, blockstate.with(SNOWY, world.getBlockState(pos1.up()).getBlock() == Blocks.SNOW));
             }
           }
         }
@@ -119,6 +127,22 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
     }
   }
 
+  @Override
+  public boolean addDestroyEffects(BlockState state, World world, BlockPos pos, ParticleManager manager) {
+    return false;
+  }
+
+  @Nonnull
+  @Override
+  public BlockRenderLayer getRenderLayer() {
+    return BlockRenderLayer.CUTOUT_MIPPED;
+  }
+
+  @Override
+  public boolean isSolid(BlockState p_200124_1_) {
+    return true;
+  }
+
   public boolean isInDaylight(World world, BlockPos pos) {
     return world.isDaytime() && world.getBrightness(pos.up()) > 0.5F && world.isSkyLightMax(pos.up());
   }
@@ -135,10 +159,10 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
     Biome.SpawnListEntry entry = spawnOptions.get(found);
     //can the mob actually spawn here naturally, filters out mobs such as slimes; ignore them when force spawning
     if (!EntitySpawnPlacementRegistry.func_223515_a(entry.entityType, world, SpawnReason.NATURAL, pos, world.rand)
-            && !forceSpawn.get() || blacklistedEntities.get().contains(entry.entityType.toString()))
+            && !forceSpawn.get() || blacklisted_entities.contains(entry.entityType))
       return null;
-    EntityType entityEntry = entry.entityType;
-    Entity ent = entityEntry.create(world);
+    EntityType type = entry.entityType;
+    Entity ent = type.create(world);
     //cursed earth only works with hostiles
     if (!(ent instanceof MobEntity))return null;
     ((MobEntity)ent).onInitialSpawn(world, world.getDifficultyForLocation(pos), SpawnReason.NATURAL, null, null);

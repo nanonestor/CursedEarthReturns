@@ -1,8 +1,0 @@
-{
-  "parent": "block/cube_bottom_top",
-  "textures": {
-    "bottom": "block/dirt",
-    "top": "cursedearth:block/cursed_earth_top",
-    "side": "cursedearth:block/cursed_earth_side"
-  }
-}
