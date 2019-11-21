@@ -1,19 +1,12 @@
 package com.tfar.cursedearth;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.SpreadableSnowyDirtBlock;
-import net.minecraft.client.particle.ParticleManager;
+import net.minecraft.block.GrassBlock;
 import net.minecraft.entity.*;
 import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.EntityTypeTags;
-import net.minecraft.tags.Tag;
-import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
@@ -21,25 +14,22 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static com.tfar.cursedearth.CursedEarth.Config.*;
+import static com.tfar.cursedearth.CursedEarth.ServerConfig.*;
 
-public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
+public class CursedEarthBlock extends GrassBlock {
   public CursedEarthBlock(Properties properties) {
     super(properties);
   }
-
-  public static final Tag<Block> spreadable = new BlockTags.Wrapper(new ResourceLocation(CursedEarth.MODID, "spreadable"));
-  public static final Tag<EntityType<?>> blacklisted_entities = new EntityTypeTags.Wrapper(new ResourceLocation(CursedEarth.MODID, "blacklisted"));
 
   @Override
   public void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean isMoving) {
@@ -63,7 +53,7 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
         return true;
       } else {
         for (Biome.SpawnListEntry entry : entries) {
-          spawnInfo.add(new SpawnDetail(entry, EntityClassification.MONSTER));
+          spawnInfo.add(new SpawnDetail(entry));
         }
         ITextComponent names1 = new TranslationTextComponent("Names: ");
         for (SpawnDetail detail : spawnInfo) {
@@ -78,14 +68,10 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
 
   public static class SpawnDetail {
 
-    private int itemWeight;
     private String displayName;
-    private String creatureTypeName;
 
     //    private boolean lightEnabled = true;
-    public SpawnDetail(Biome.SpawnListEntry entry, EntityClassification creatureType) {
-      itemWeight = entry.itemWeight;
-      creatureTypeName = creatureType.name();
+    public SpawnDetail(Biome.SpawnListEntry entry) {
       displayName = entry.entityType.getTranslationKey().replace("Entity", "");
     }
   }
@@ -102,12 +88,13 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
           BlockState blockstate = this.getDefaultState();
           for (int i = 0; i < 4; ++i) {
             BlockPos pos1 = pos.add(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
-            if (world.getBlockState(pos1).getBlock().isIn(spreadable) && world.getBlockState(pos1.up()).isAir(world,pos1.up())) {
+            if (world.getBlockState(pos1).getBlock().isIn(CursedEarth.spreadable) && world.getBlockState(pos1.up()).isAir(world,pos1.up())) {
               world.setBlockState(pos1, blockstate.with(SNOWY, world.getBlockState(pos1.up()).getBlock() == Blocks.SNOW));
             }
           }
         }
       }
+
       world.getPendingBlockTicks().scheduleTick(pos, state.getBlock(), random.nextInt(maxTickTime.get() - minTickTime.get() + 1));
       //dont spawn in water
       if (!world.getFluidState(pos.up()).isEmpty()) return;
@@ -128,19 +115,18 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
   }
 
   @Override
-  public boolean addDestroyEffects(BlockState state, World world, BlockPos pos, ParticleManager manager) {
-    return false;
-  }
-
-  @Nonnull
-  @Override
-  public BlockRenderLayer getRenderLayer() {
-    return BlockRenderLayer.CUTOUT_MIPPED;
+  public boolean canGrow(IBlockReader p_176473_1_, BlockPos p_176473_2_, BlockState p_176473_3_, boolean p_176473_4_) {
+    return false;//no
   }
 
   @Override
-  public boolean isSolid(BlockState p_200124_1_) {
-    return true;
+  public void grow(World world, Random random, BlockPos pos, BlockState state) {
+    //no
+  }
+
+  @Override
+  public boolean canUseBonemeal(World p_180670_1_, Random p_180670_2_, BlockPos p_180670_3_, BlockState p_180670_4_) {
+    return false;//no
   }
 
   public boolean isInDaylight(World world, BlockPos pos) {
@@ -157,9 +143,10 @@ public class CursedEarthBlock extends SpreadableSnowyDirtBlock {
     }
     int found = rand.nextInt(spawnOptions.size());
     Biome.SpawnListEntry entry = spawnOptions.get(found);
-    //can the mob actually spawn here naturally, filters out mobs such as slimes; ignore them when force spawning
+    //can the mob actually spawn here naturally, filters out mobs such as slimes which have more specific spawn requirements but
+    // still show up in spawnlist; ignore them when force spawning
     if (!EntitySpawnPlacementRegistry.func_223515_a(entry.entityType, world, SpawnReason.NATURAL, pos, world.rand)
-            && !forceSpawn.get() || blacklisted_entities.contains(entry.entityType))
+            && !forceSpawn.get() || CursedEarth.blacklisted_entities.contains(entry.entityType))
       return null;
     EntityType type = entry.entityType;
     Entity ent = type.create(world);

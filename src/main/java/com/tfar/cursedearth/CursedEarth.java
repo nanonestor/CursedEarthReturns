@@ -10,16 +10,22 @@ import net.minecraft.client.renderer.color.BlockColors;
 import net.minecraft.client.renderer.color.IBlockColor;
 import net.minecraft.client.renderer.color.IItemColor;
 import net.minecraft.client.renderer.color.ItemColors;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Items;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.tags.Tag;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.ToolType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -28,8 +34,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.ObjectHolder;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(CursedEarth.MODID)
@@ -37,17 +43,19 @@ public class CursedEarth {
 
   public static final String MODID = "cursedearth";
 
-  // Directly reference a log4j logger.
+  public static final Tag<EntityType<?>> blacklisted_entities = new EntityTypeTags.Wrapper(new ResourceLocation(MODID, "blacklisted"));
+  public static final Tag<Block> spreadable = new BlockTags.Wrapper(new ResourceLocation(MODID, "spreadable"));
+
   @ObjectHolder(MODID + ":cursed_earth")
   public static final Block cursed_earth = null;
 
-  public static final Config SERVER;
+  public static final ServerConfig SERVER;
   public static final ForgeConfigSpec SERVER_SPEC;
   public static final ClientConfig CLIENT;
   public static final ForgeConfigSpec CLIENT_SPEC;
 
   static {
-    final Pair<Config, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(Config::new);
+    final Pair<ServerConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(ServerConfig::new);
     SERVER_SPEC = specPair.getRight();
     SERVER = specPair.getLeft();
     final Pair<ClientConfig, ForgeConfigSpec> specPair2 = new ForgeConfigSpec.Builder().configure(ClientConfig::new);
@@ -67,7 +75,7 @@ public class CursedEarth {
     }
   }
 
-  public static class Config {
+  public static class ServerConfig {
 
     public static ForgeConfigSpec.IntValue minTickTime;
     public static ForgeConfigSpec.IntValue maxTickTime;
@@ -78,7 +86,7 @@ public class CursedEarth {
     public static ForgeConfigSpec.IntValue spawnRadius;
     public static ForgeConfigSpec.BooleanValue witherRose;
 
-    Config(ForgeConfigSpec.Builder builder) {
+    ServerConfig(ForgeConfigSpec.Builder builder) {
       builder.push("general");
 
       minTickTime = builder
@@ -110,11 +118,10 @@ public class CursedEarth {
     }
   }
 
-  private static final Logger LOGGER = LogManager.getLogger();
-
   public CursedEarth() {
     ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SERVER_SPEC);
     ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
+    EVENT_BUS.addListener(this::rose);
   }
 
   // You can use EventBusSubscriber to automatically subscribe events on the contained class (this is subscribing to the MOD
@@ -125,7 +132,7 @@ public class CursedEarth {
     public static void blocks(final RegistryEvent.Register<Block> event) {
       // register a new block here
       event.getRegistry().register(new CursedEarthBlock(Block.Properties.create(Material.ORGANIC)
-              .hardnessAndResistance(.6f).sound(SoundType.PLANT)).setRegistryName("cursed_earth"));
+              .hardnessAndResistance(.6f).sound(SoundType.PLANT).harvestTool(ToolType.SHOVEL)).setRegistryName("cursed_earth"));
     }
 
     @SubscribeEvent
@@ -152,17 +159,14 @@ public class CursedEarth {
     }
   }
 
-  @Mod.EventBusSubscriber
-  public static class Rose {
-    @SubscribeEvent
-    public static void applyRose(PlayerInteractEvent.RightClickBlock e) {
-      if (!Config.witherRose.get()) return;
-      PlayerEntity p = e.getPlayer();
-      World w = p.world;
-      BlockPos pos = e.getPos();
-      if (p.isSneaking() && !w.isRemote && e.getItemStack().getItem() == Items.WITHER_ROSE && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
-        w.setBlockState(pos, cursed_earth.getDefaultState());
-      }
+  private void rose(PlayerInteractEvent.RightClickBlock e) {
+    if (!ServerConfig.witherRose.get()) return;
+    PlayerEntity p = e.getPlayer();
+    World w = p.world;
+    BlockPos pos = e.getPos();
+    if (p.isSneaking() && !w.isRemote && e.getItemStack().getItem() == Items.WITHER_ROSE && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+      w.setBlockState(pos, cursed_earth.getDefaultState());
     }
   }
 }
+
