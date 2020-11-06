@@ -43,7 +43,7 @@ public class CursedEarth {
 
   public static final String MODID = "cursedearth";
 
-  public static final ITag.INamedTag<EntityType<?>> blacklisted_entities = EntityTypeTags.func_232896_a_(MODID + ":blacklisted");
+  public static final ITag.INamedTag<EntityType<?>> blacklisted_entities = EntityTypeTags.getTagById(MODID + ":blacklisted");
   public static final ITag.INamedTag<Block> spreadable = BlockTags.makeWrapperTag(MODID + ":spreadable");
 
   @ObjectHolder(MODID + ":cursed_earth")

@@ -17,6 +17,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.MobSpawnInfo;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
 
@@ -49,13 +50,13 @@ public class CursedEarthBlock extends GrassBlock {
 
       List<SpawnDetail> spawnInfo = new ArrayList<>();
 
-      List<Biome.SpawnListEntry> entries = s.getChunkGenerator().func_230353_a_(world.getBiome(pos), ((ServerWorld) world).func_241112_a_(), EntityClassification.MONSTER, pos.up());
+      List<MobSpawnInfo.Spawners> entries = s.getChunkGenerator().func_230353_a_(world.getBiome(pos), ((ServerWorld) world).func_241112_a_(), EntityClassification.MONSTER, pos.up());
       // nothing can spawn, occurs in places such as mushroom biomes
       if (entries.size() == 0) {
         player.sendStatusMessage(new TranslationTextComponent("text.cursedearth.nospawns"), true);
         return ActionResultType.SUCCESS;
       } else {
-        for (Biome.SpawnListEntry entry : entries) {
+        for (MobSpawnInfo.Spawners entry : entries) {
           spawnInfo.add(new SpawnDetail(entry));
         }
         TranslationTextComponent names1 = new TranslationTextComponent("Names: ");
@@ -78,8 +79,8 @@ public class CursedEarthBlock extends GrassBlock {
     private final String displayName;
 
     //    private boolean lightEnabled = true;
-    public SpawnDetail(Biome.SpawnListEntry entry) {
-      displayName = entry.entityType.getTranslationKey().replace("Entity", "");
+    public SpawnDetail(MobSpawnInfo.Spawners entry) {
+      displayName = entry.type.getTranslationKey().replace("Entity", "");
     }
   }
 
@@ -148,20 +149,20 @@ public class CursedEarthBlock extends GrassBlock {
   private MobEntity findMonsterToSpawn(ServerWorld world, BlockPos pos, Random rand) {
     //required to account for structure based mobs such as wither skeletons
     ServerChunkProvider s = world.getChunkProvider();
-    List<Biome.SpawnListEntry> spawnOptions = s.getChunkGenerator().func_230353_a_(world.getBiome(pos), world.func_241112_a_(), EntityClassification.MONSTER, pos);
+    List<MobSpawnInfo.Spawners> spawnOptions = s.getChunkGenerator().func_230353_a_(world.getBiome(pos), world.func_241112_a_(), EntityClassification.MONSTER, pos);
     //there is nothing to spawn
     if (spawnOptions.size() == 0) {
       return null;
     }
     int found = rand.nextInt(spawnOptions.size());
-    Biome.SpawnListEntry entry = spawnOptions.get(found);
+    MobSpawnInfo.Spawners entry = spawnOptions.get(found);
     //can the mob actually spawn here naturally, filters out mobs such as slimes which have more specific spawn requirements but
     // still show up in spawnlist; ignore them when force spawning
-    if (!EntitySpawnPlacementRegistry.canSpawnEntity(entry.entityType, world, SpawnReason.NATURAL, pos, world.rand)
-            && !forceSpawn.get() || CursedEarth.blacklisted_entities.contains(entry.entityType))
+    if (!EntitySpawnPlacementRegistry.canSpawnEntity(entry.type, world, SpawnReason.NATURAL, pos, world.rand)
+            && !forceSpawn.get() || CursedEarth.blacklisted_entities.contains(entry.type))
       return null;
     //noinspection rawtypes
-    EntityType type = entry.entityType;
+    EntityType type = entry.type;
     Entity ent = type.create(world);
     //cursed earth only works with hostiles
     if (!(ent instanceof MobEntity))return null;
