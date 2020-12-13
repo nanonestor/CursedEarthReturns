@@ -1,4 +1,4 @@
-package com.tfar.cursedearth;
+package tfar.cursedearth;
 
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
@@ -20,6 +20,7 @@ import net.minecraft.item.Items;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.ITag;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
@@ -42,9 +43,8 @@ import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
 public class CursedEarth {
 
   public static final String MODID = "cursedearth";
-
-  public static final ITag.INamedTag<EntityType<?>> blacklisted_entities = EntityTypeTags.getTagById(MODID + ":blacklisted");
-  public static final ITag.INamedTag<Block> spreadable = BlockTags.makeWrapperTag(MODID + ":spreadable");
+  public static final ITag<EntityType<?>> blacklisted_entities = EntityTypeTags.getTagById(new ResourceLocation(MODID, "blacklisted").toString());
+  public static final ITag<Block> spreadable = BlockTags.makeWrapperTag(new ResourceLocation(MODID, "spreadable").toString());
 
   @ObjectHolder(MODID + ":cursed_earth")
   public static final Block cursed_earth = null;
