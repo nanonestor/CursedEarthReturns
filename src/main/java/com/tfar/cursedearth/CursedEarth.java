@@ -1,11 +1,12 @@
 package com.tfar.cursedearth;
 
+import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.color.BlockColors;
 import net.minecraft.client.renderer.color.IBlockColor;
 import net.minecraft.client.renderer.color.IItemColor;
@@ -18,33 +19,32 @@ import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Items;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.EntityTypeTags;
-import net.minecraft.tags.Tag;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.tags.ITag;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ToolType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ObjectHolder;
 import org.apache.commons.lang3.tuple.Pair;
 
 import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(CursedEarth.MODID)
 public class CursedEarth {
 
   public static final String MODID = "cursedearth";
 
-  public static final Tag<EntityType<?>> blacklisted_entities = new EntityTypeTags.Wrapper(new ResourceLocation(MODID, "blacklisted"));
-  public static final Tag<Block> spreadable = new BlockTags.Wrapper(new ResourceLocation(MODID, "spreadable"));
+  public static final ITag.INamedTag<EntityType<?>> blacklisted_entities = EntityTypeTags.getTagById(MODID + ":blacklisted");
+  public static final ITag.INamedTag<Block> spreadable = BlockTags.makeWrapperTag(MODID + ":spreadable");
 
   @ObjectHolder(MODID + ":cursed_earth")
   public static final Block cursed_earth = null;
@@ -121,7 +121,12 @@ public class CursedEarth {
   public CursedEarth() {
     ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SERVER_SPEC);
     ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
+    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
     EVENT_BUS.addListener(this::rose);
+  }
+
+  private void onClientSetup(FMLClientSetupEvent event) {
+    RenderTypeLookup.setRenderLayer(cursed_earth, RenderType.getCutout());
   }
 
   // You can use EventBusSubscriber to automatically subscribe events on the contained class (this is subscribing to the MOD
@@ -131,8 +136,8 @@ public class CursedEarth {
     @SubscribeEvent
     public static void blocks(final RegistryEvent.Register<Block> event) {
       // register a new block here
-      event.getRegistry().register(new CursedEarthBlock(Block.Properties.create(Material.ORGANIC)
-              .hardnessAndResistance(.6f).sound(SoundType.PLANT).harvestTool(ToolType.SHOVEL)).setRegistryName("cursed_earth"));
+      event.getRegistry().register(new CursedEarthBlock(AbstractBlock.Properties.from(Blocks.GRASS_BLOCK))
+              .setRegistryName("cursed_earth"));
     }
 
     @SubscribeEvent
