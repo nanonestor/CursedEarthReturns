@@ -46,8 +46,8 @@ import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
 public class CursedEarth {
 
     public static final String MODID = "cursedearth";
-    public static final ITag<EntityType<?>> blacklisted_entities = EntityTypeTags.getTagById(new ResourceLocation(MODID, "blacklisted").toString());
-    public static final ITag<Block> spreadable = BlockTags.makeWrapperTag(new ResourceLocation(MODID, "spreadable").toString());
+    public static final ITag<EntityType<?>> blacklisted_entities = EntityTypeTags.bind(new ResourceLocation(MODID, "blacklisted").toString());
+    public static final ITag<Block> spreadable = BlockTags.bind(new ResourceLocation(MODID, "spreadable").toString());
 
     @ObjectHolder(MODID + ":cursed_earth")
     public static final Block cursed_earth = null;
@@ -141,17 +141,17 @@ public class CursedEarth {
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
-        RenderTypeLookup.setRenderLayer(cursed_earth, RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(cursed_earth, RenderType.cutout());
     }
 
     public void blocks(final RegistryEvent.Register<Block> event) {
         // register a new block here
-        event.getRegistry().register(new CursedEarthBlock(AbstractBlock.Properties.from(Blocks.GRASS_BLOCK))
+        event.getRegistry().register(new CursedEarthBlock(AbstractBlock.Properties.copy(Blocks.GRASS_BLOCK))
                 .setRegistryName("cursed_earth"));
     }
 
     public void items(final RegistryEvent.Register<Item> event) {
-        event.getRegistry().register(new BlockItem(cursed_earth, new Item.Properties().group(ItemGroup.DECORATIONS))
+        event.getRegistry().register(new BlockItem(cursed_earth, new Item.Properties().tab(ItemGroup.TAB_DECORATIONS))
                 .setRegistryName("cursed_earth"));
     }
 
@@ -159,17 +159,17 @@ public class CursedEarth {
 
     public void config(ModConfig.ModConfigEvent e) {
         if (e.getConfig().getModId().equals(MODID)) {
-            item = Registry.ITEM.getOrDefault(new ResourceLocation(ServerConfig.item.get()));
+            item = Registry.ITEM.get(new ResourceLocation(ServerConfig.item.get()));
         }
     }
 
     private void rose(PlayerInteractEvent.RightClickBlock e) {
         if (!ServerConfig.witherRose.get()) return;
         PlayerEntity p = e.getPlayer();
-        World w = p.world;
+        World w = p.level;
         BlockPos pos = e.getPos();
-        if (p.isSneaking() && !w.isRemote && e.getItemStack().getItem() == item && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
-            w.setBlockState(pos, cursed_earth.getDefaultState());
+        if (p.isShiftKeyDown() && !w.isClientSide && e.getItemStack().getItem() == item && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+            w.setBlockAndUpdate(pos, cursed_earth.defaultBlockState());
             e.setCanceled(true);
         }
     }
@@ -184,7 +184,7 @@ public class CursedEarth {
             blockColors.register(iBlockColor, cursed_earth);
             ItemColors itemColors = Minecraft.getInstance().getItemColors();
             final IItemColor itemBlockColor = (stack, tintIndex) -> {
-                final BlockState state = ((BlockItem) stack.getItem()).getBlock().getDefaultState();
+                final BlockState state = ((BlockItem) stack.getItem()).getBlock().defaultBlockState();
                 return blockColors.getColor(state, null, null, tintIndex);
             };
             itemColors.register(itemBlockColor, cursed_earth);
