@@ -1,37 +1,30 @@
 package tfar.cursedearth;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.GrassBlock;
-import net.minecraft.entity.*;
-import net.minecraft.entity.monster.IMob;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.Util;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.MobSpawnInfo;
-import net.minecraft.world.server.ServerChunkProvider;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.GrassBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 import static tfar.cursedearth.CursedEarth.ServerConfig.*;
-
-import net.minecraft.block.AbstractBlock.Properties;
 
 public class CursedEarthBlock extends GrassBlock {
     public CursedEarthBlock(Properties properties) {
@@ -39,51 +32,48 @@ public class CursedEarthBlock extends GrassBlock {
     }
 
     @Override
-    public void onPlace(BlockState state, World world, BlockPos pos, BlockState oldState, boolean isMoving) {
+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, world, pos, oldState, isMoving);
-        int i = minTickTime.get();
-        if (i == 0) {
-            i = 1;
-        }
-        world.getBlockTicks().scheduleTick(pos, this, world.random.nextInt(maxTickTime.get() - minTickTime.get()) + i);
+        schedule(pos, world);
+    }
+
+    public void schedule(BlockPos pos,Level level) {
+             level.scheduleTick(pos, this, level.random.nextInt(maxTickTime.get() - minTickTime.get()));
     }
 
     @Override
-    public ActionResultType use(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockRayTraceResult hit) {
+    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (player.getItemInHand(hand).isEmpty() && player.isShiftKeyDown()) {
             if (!world.isClientSide) {
 
-                ServerChunkProvider s = (ServerChunkProvider) world.getChunkSource();
-                List<MobSpawnInfo.Spawners> entries = s.getGenerator().getMobsAt(world.getBiome(pos), ((ServerWorld) world).structureFeatureManager(), EntityClassification.MONSTER, pos.above())
-                        .stream().filter(spawners -> !spawners.type.is(CursedEarth.blacklisted_entities)).collect(Collectors.toList());
+                ServerChunkCache s = (ServerChunkCache) world.getChunkSource();
+                List<MobSpawnSettings.SpawnerData> entries = s.getGenerator()
+                        .getMobsAt(world.getBiome(pos), ((ServerLevel) world).structureFeatureManager(), MobCategory.MONSTER, pos.above())
+                        .unwrap().stream().filter(spawners -> !spawners.type.is(CursedEarth.blacklisted_entities)).toList();
                 // nothing can spawn, occurs in places such as mushroom biomes
                 if (entries.size() == 0) {
-                    player.displayClientMessage(new TranslationTextComponent("text.cursedearth.nospawns"), true);
+                    player.displayClientMessage(new TranslatableComponent("text.cursedearth.nospawns"), true);
                 } else {
-                    TranslationTextComponent names1 = new TranslationTextComponent("Mobs: ");
+                    TranslatableComponent names1 = new TranslatableComponent("Mobs: ");
                     for (int i = 0; i < entries.size(); i++) {
-                        MobSpawnInfo.Spawners spawners = entries.get(i);
+                        MobSpawnSettings.SpawnerData spawners = entries.get(i);
                         names1.append(spawners.type.getDescription());
                         if (i < entries.size() - 1) {
-                            names1.append(new StringTextComponent(", "));
+                            names1.append(new TextComponent(", "));
                         }
                     }
                      player.sendMessage(names1, Util.NIL_UUID);
                 }
             }
-            return ActionResultType.sidedSuccess(world.isClientSide);
+            return InteractionResult.sidedSuccess(world.isClientSide);
         }
-        return ActionResultType.PASS;
+        return InteractionResult.PASS;
     }
 
     @Override
-    public void tick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
         if (!world.isClientSide) {
-            int j = minTickTime.get();
-            if (j == 0) {
-                j = 1;
-            }
-            world.getBlockTicks().scheduleTick(pos, this, world.random.nextInt(maxTickTime.get() - minTickTime.get()) + j);
+            schedule(pos,world);
             if (!world.isAreaLoaded(pos, 3))
                 return; // Forge: prevent loading unloaded chunks when checking neighbor's light and spreading
 
@@ -99,23 +89,19 @@ public class CursedEarthBlock extends GrassBlock {
                     BlockState blockstate = this.defaultBlockState();
                     for (int i = 0; i < 4; ++i) {
                         BlockPos pos1 = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
-                        if (world.getBlockState(pos1).getBlock().is(CursedEarth.spreadable) && world.getBlockState(pos1.above()).isAir()) {
+                        if (world.getBlockState(pos1).is(CursedEarth.spreadable) && world.getBlockState(pos1.above()).isAir()) {
                             world.setBlockAndUpdate(pos1, blockstate.setValue(SNOWY, world.getBlockState(pos1.above()).getBlock() == Blocks.SNOW));
                         }
                     }
                 }
             }
 
-            world.getBlockTicks().scheduleTick(pos, state.getBlock(), random.nextInt(maxTickTime.get() - minTickTime.get() + 1));
             //dont spawn in water
             if (!world.getFluidState(pos.above()).isEmpty()) return;
             //don't spawn in peaceful
             if (world.getLevelData().getDifficulty() == Difficulty.PEACEFUL) return;
-            //mobcap used because mobs are laggy in large numbers todo: how well does this work on servers
-            long mobcount = world.getEntities().filter(IMob.class::isInstance).count();
-            if (mobcount > mobCap.get()) return;
             int r = spawnRadius.get();
-            if (world.getEntitiesOfClass(PlayerEntity.class, new AxisAlignedBB(-r, -r, -r, r, r, r)).size() > 0)
+            if (world.getEntitiesOfClass(Player.class, new AABB(-r, -r, -r, r, r, r)).size() > 0)
                 return;
             Entity en = findMonsterToSpawn(world, pos.above(), random);
             if (en != null) {
@@ -127,25 +113,25 @@ public class CursedEarthBlock extends GrassBlock {
     }
 
     @Override
-    public boolean isValidBonemealTarget(IBlockReader world, BlockPos pos, BlockState state, boolean p_176473_4_) {
+    public boolean isValidBonemealTarget(BlockGetter world, BlockPos pos, BlockState state, boolean p_176473_4_) {
         return false;//no
     }
 
     @Override
-    public void performBonemeal(ServerWorld world, Random random, BlockPos pos, BlockState state) {
+    public void performBonemeal(ServerLevel world, Random random, BlockPos pos, BlockState state) {
         //no
     }
 
     @Override
-    public boolean isBonemealSuccess(World world, Random random, BlockPos pos, BlockState state) {
+    public boolean isBonemealSuccess(Level world, Random random, BlockPos pos, BlockState state) {
         return false;//no
     }
 
-    private Entity findMonsterToSpawn(ServerWorld world, BlockPos pos, Random rand) {
+    private Entity findMonsterToSpawn(ServerLevel world, BlockPos pos, Random rand) {
         //required to account for structure based mobs such as wither skeletons, remove blacklisted entities here, so they don't slow down spawning
-        ServerChunkProvider s = world.getChunkSource();
-        List<MobSpawnInfo.Spawners> spawnOptions = s.getGenerator().getMobsAt(world.getBiome(pos), world.structureFeatureManager(), EntityClassification.MONSTER, pos)
-                .stream().filter(spawners -> !spawners.type.is(CursedEarth.blacklisted_entities)).collect(Collectors.toList());
+        ServerChunkCache s = world.getChunkSource();
+        List<MobSpawnSettings.SpawnerData> spawnOptions = s.getGenerator().getMobsAt(world.getBiome(pos), world.structureFeatureManager(), MobCategory.MONSTER, pos)
+                .unwrap().stream().filter(spawners -> !spawners.type.is(CursedEarth.blacklisted_entities)).toList();
         //there is nothing to spawn
         if (spawnOptions.size() == 0) {
             return null;
@@ -154,16 +140,16 @@ public class CursedEarthBlock extends GrassBlock {
 
 
         int found = rand.nextInt(spawnOptions.size());
-        MobSpawnInfo.Spawners entry = spawnOptions.get(found);
+        MobSpawnSettings.SpawnerData entry = spawnOptions.get(found);
         //can the mob actually spawn here naturally, filters out mobs such as slimes which have more specific spawn requirements but
         // still show up in spawnlist; ignore them when force spawning
-        if (!EntitySpawnPlacementRegistry.checkSpawnRules(entry.type, world, SpawnReason.NATURAL, pos, world.random)
+        if (!SpawnPlacements.checkSpawnRules(entry.type, world, MobSpawnType.NATURAL, pos, world.random)
                 && !forceSpawn.get())
             return null;
         EntityType<?> type = entry.type;
         Entity ent = type.create(world);
-        if (ent instanceof MobEntity)
-            ((MobEntity) ent).finalizeSpawn(world, world.getCurrentDifficultyAt(pos), SpawnReason.NATURAL, null, null);
+        if (ent instanceof Mob)
+            ((Mob) ent).finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null, null);
         return ent;
     }
 }
