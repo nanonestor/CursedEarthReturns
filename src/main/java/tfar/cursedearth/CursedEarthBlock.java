@@ -16,6 +16,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -31,7 +32,7 @@ import static tfar.cursedearth.CursedEarth.ServerConfig.*;
 
 public class CursedEarthBlock extends GrassBlock {
     public static final Block cursed_earth = new CursedEarthBlock(Properties.copy(Blocks.GRASS_BLOCK));
-    public static final Item cursed_earth_item = new BlockItem(cursed_earth,new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS));
+    public static final Item cursed_earth_item = new BlockItem(cursed_earth,new Item.Properties());
 
     public CursedEarthBlock(Properties properties) {
         super(properties);
@@ -119,7 +120,7 @@ public class CursedEarthBlock extends GrassBlock {
     }
 
     @Override
-    public boolean isValidBonemealTarget(BlockGetter world, BlockPos pos, BlockState state, boolean p_176473_4_) {
+    public boolean isValidBonemealTarget(LevelReader world, BlockPos pos, BlockState state, boolean p_176473_4_) {
         return false;//no
     }
 

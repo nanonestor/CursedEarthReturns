@@ -9,6 +9,8 @@ import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
@@ -46,7 +48,7 @@ public class CursedEarth {
     public static final TagKey<Block> spreadable = BlockTags.create(new ResourceLocation(MODID, "spreadable"));
 
     private static TagKey<EntityType<?>> create(ResourceLocation p_203849_) {
-        return TagKey.create(Registry.ENTITY_TYPE_REGISTRY, p_203849_);
+        return TagKey.create(Registries.ENTITY_TYPE, p_203849_);
     }
 
     public CursedEarth() {
@@ -124,8 +126,8 @@ public class CursedEarth {
 
             item = builder
                     .comment("item used to create cursed earth")
-                    .define("item", Registry.ITEM.getKey(Items.WITHER_ROSE).toString(),o -> o instanceof String s&&
-                            Registry.ITEM.getOptional(new ResourceLocation(s)).isPresent());
+                    .define("item", BuiltInRegistries.ITEM.getKey(Items.WITHER_ROSE).toString(), o -> o instanceof String s&&
+                            BuiltInRegistries.ITEM.getOptional(new ResourceLocation(s)).isPresent());
 
             builder.pop();
         }
@@ -137,9 +139,9 @@ public class CursedEarth {
 
     public void blocks(final RegisterEvent event) {
 
-        event.register(Registry.BLOCK_REGISTRY,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth);
+        event.register(Registries.BLOCK,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth);
 
-        event.register(Registry.ITEM_REGISTRY,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth_item);
+        event.register(Registries.ITEM,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth_item);
 
     }
 
@@ -149,7 +151,7 @@ public class CursedEarth {
         Level w = p.level;
         BlockPos pos = e.getPos();
         if (p.isShiftKeyDown() && !w.isClientSide && e.getItemStack().getItem() ==
-                Registry.ITEM.get(new ResourceLocation(ServerConfig.item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
             e.setCanceled(true);
         }
