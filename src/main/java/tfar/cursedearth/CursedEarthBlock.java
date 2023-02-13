@@ -60,7 +60,7 @@ public class CursedEarthBlock extends GrassBlock {
                 if (entries.size() == 0) {
                     player.displayClientMessage(new TranslationTextComponent("text.cursedearth.nospawns"), true);
                 } else {
-                    TranslationTextComponent names1 = new TranslationTextComponent("Names: ");
+                    TranslationTextComponent names1 = new TranslationTextComponent("Mobs: ");
                     for (int i = 0; i < entries.size(); i++) {
                         MobSpawnInfo.Spawners spawners = entries.get(i);
                         names1.append(spawners.type.getDescription());
