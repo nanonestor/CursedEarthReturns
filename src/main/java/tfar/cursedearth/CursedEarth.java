@@ -1,34 +1,28 @@
 package tfar.cursedearth;
 
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.color.block.BlockColor;
+import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.color.item.ItemColors;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Items;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.EntityTypeTags;
-import net.minecraft.tags.Tag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -39,7 +33,7 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.registries.ObjectHolder;
+import net.minecraftforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
 
 import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
@@ -55,9 +49,6 @@ public class CursedEarth {
         return TagKey.create(Registry.ENTITY_TYPE_REGISTRY, p_203849_);
     }
 
-    @ObjectHolder(MODID + ":cursed_earth")
-    public static final Block cursed_earth = null;
-
     public CursedEarth() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SERVER_SPEC);
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
@@ -65,9 +56,7 @@ public class CursedEarth {
         if (FMLEnvironment.dist.isClient()) {
             bus.addListener(this::onClientSetup);
         }
-        bus.addGenericListener(Block.class, this::blocks);
-        bus.addGenericListener(Item.class, this::items);
-        bus.addListener(this::config);
+        bus.addListener(this::blocks);
         EVENT_BUS.addListener(this::rose);
     }
 
@@ -135,43 +124,33 @@ public class CursedEarth {
 
             item = builder
                     .comment("item used to create cursed earth")
-                    .define("item", Items.WITHER_ROSE.getRegistryName().toString(),o -> o instanceof String &&
-                            Registry.ITEM.getOptional(new ResourceLocation((String) o)).isPresent());
+                    .define("item", Registry.ITEM.getKey(Items.WITHER_ROSE).toString(),o -> o instanceof String s&&
+                            Registry.ITEM.getOptional(new ResourceLocation(s)).isPresent());
 
             builder.pop();
         }
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
-        ItemBlockRenderTypes.setRenderLayer(cursed_earth, RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(CursedEarthBlock.cursed_earth, RenderType.cutout());
     }
 
-    public void blocks(final RegistryEvent.Register<Block> event) {
-        // register a new block here
-        event.getRegistry().register(new CursedEarthBlock(BlockBehaviour.Properties.copy(Blocks.GRASS_BLOCK))
-                .setRegistryName("cursed_earth"));
-    }
+    public void blocks(final RegisterEvent event) {
 
-    public void items(final RegistryEvent.Register<Item> event) {
-        event.getRegistry().register(new BlockItem(cursed_earth, new Item.Properties().tab(CreativeModeTab.TAB_DECORATIONS))
-                .setRegistryName("cursed_earth"));
-    }
+        event.register(Registry.BLOCK_REGISTRY,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth);
 
-    public static Item item;
+        event.register(Registry.ITEM_REGISTRY,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth_item);
 
-    public void config(ModConfigEvent e) {
-        if (e.getConfig().getModId().equals(MODID)) {
-            item = Registry.ITEM.get(new ResourceLocation(ServerConfig.item.get()));
-        }
     }
 
     private void rose(PlayerInteractEvent.RightClickBlock e) {
         if (!ServerConfig.witherRose.get()) return;
-        Player p = e.getPlayer();
+        Player p = e.getEntity();
         Level w = p.level;
         BlockPos pos = e.getPos();
-        if (p.isShiftKeyDown() && !w.isClientSide && e.getItemStack().getItem() == item && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
-            w.setBlockAndUpdate(pos, cursed_earth.defaultBlockState());
+        if (p.isShiftKeyDown() && !w.isClientSide && e.getItemStack().getItem() ==
+                Registry.ITEM.get(new ResourceLocation(ServerConfig.item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+            w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
             e.setCanceled(true);
         }
     }
@@ -179,17 +158,17 @@ public class CursedEarth {
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class Colors {
         @SubscribeEvent
-        public static void color(ModelRegistryEvent e) {
+        public static void color(FMLClientSetupEvent e) {
             BlockColors blockColors = Minecraft.getInstance().getBlockColors();
             BlockColor iBlockColor = (blockState, iEnviromentBlockReader, blockPos, i) -> Integer.decode(ClientConfig.color.get());
 
-            blockColors.register(iBlockColor, cursed_earth);
+            blockColors.register(iBlockColor, CursedEarthBlock.cursed_earth);
             ItemColors itemColors = Minecraft.getInstance().getItemColors();
             final ItemColor itemBlockColor = (stack, tintIndex) -> {
                 final BlockState state = ((BlockItem) stack.getItem()).getBlock().defaultBlockState();
                 return blockColors.getColor(state, null, null, tintIndex);
             };
-            itemColors.register(itemBlockColor, cursed_earth);
+            itemColors.register(itemBlockColor, CursedEarthBlock.cursed_earth);
         }
     }
 }

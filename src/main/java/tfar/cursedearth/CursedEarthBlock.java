@@ -1,32 +1,38 @@
 package tfar.cursedearth;
 
-import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.MobSpawnSettings;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.GrassBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
 
 import static tfar.cursedearth.CursedEarth.ServerConfig.*;
 
 public class CursedEarthBlock extends GrassBlock {
+    public static final Block cursed_earth = new CursedEarthBlock(Properties.copy(Blocks.GRASS_BLOCK));
+    public static final Item cursed_earth_item = new BlockItem(cursed_earth,new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS));
+
     public CursedEarthBlock(Properties properties) {
         super(properties);
     }
@@ -48,21 +54,21 @@ public class CursedEarthBlock extends GrassBlock {
 
                 ServerChunkCache s = (ServerChunkCache) world.getChunkSource();
                 List<MobSpawnSettings.SpawnerData> entries = s.getGenerator()
-                        .getMobsAt(world.getBiome(pos), ((ServerLevel) world).structureFeatureManager(), MobCategory.MONSTER, pos.above())
+                        .getMobsAt(world.getBiome(pos), ((ServerLevel) world).structureManager(), MobCategory.MONSTER, pos.above())
                         .unwrap().stream().filter(spawners -> !spawners.type.is(CursedEarth.blacklisted_entities)).toList();
                 // nothing can spawn, occurs in places such as mushroom biomes
                 if (entries.size() == 0) {
-                    player.displayClientMessage(new TranslatableComponent("text.cursedearth.nospawns"), true);
+                    player.displayClientMessage(Component.translatable("text.cursedearth.nospawns"), true);
                 } else {
-                    TranslatableComponent names1 = new TranslatableComponent("Mobs: ");
+                    MutableComponent names = Component.literal("Mobs: ");
                     for (int i = 0; i < entries.size(); i++) {
                         MobSpawnSettings.SpawnerData spawners = entries.get(i);
-                        names1.append(spawners.type.getDescription());
+                        names.append(spawners.type.getDescription());
                         if (i < entries.size() - 1) {
-                            names1.append(new TextComponent(", "));
+                            names.append(Component.literal(", "));
                         }
                     }
-                     player.sendMessage(names1, Util.NIL_UUID);
+                     player.sendSystemMessage(names);
                 }
             }
             return InteractionResult.sidedSuccess(world.isClientSide);
@@ -71,7 +77,7 @@ public class CursedEarthBlock extends GrassBlock {
     }
 
     @Override
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, Random random) {
+    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
         if (!world.isClientSide) {
             schedule(pos,world);
             if (!world.isAreaLoaded(pos, 3))
@@ -118,19 +124,19 @@ public class CursedEarthBlock extends GrassBlock {
     }
 
     @Override
-    public void performBonemeal(ServerLevel world, Random random, BlockPos pos, BlockState state) {
+    public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
         //no
     }
 
     @Override
-    public boolean isBonemealSuccess(Level world, Random random, BlockPos pos, BlockState state) {
+    public boolean isBonemealSuccess(Level world, RandomSource random, BlockPos pos, BlockState state) {
         return false;//no
     }
 
-    private Entity findMonsterToSpawn(ServerLevel world, BlockPos pos, Random rand) {
+    private Entity findMonsterToSpawn(ServerLevel world, BlockPos pos, RandomSource rand) {
         //required to account for structure based mobs such as wither skeletons, remove blacklisted entities here, so they don't slow down spawning
         ServerChunkCache s = world.getChunkSource();
-        List<MobSpawnSettings.SpawnerData> spawnOptions = s.getGenerator().getMobsAt(world.getBiome(pos), world.structureFeatureManager(), MobCategory.MONSTER, pos)
+        List<MobSpawnSettings.SpawnerData> spawnOptions = s.getGenerator().getMobsAt(world.getBiome(pos), world.structureManager(), MobCategory.MONSTER, pos)
                 .unwrap().stream().filter(spawners -> !spawners.type.is(CursedEarth.blacklisted_entities)).toList();
         //there is nothing to spawn
         if (spawnOptions.size() == 0) {
