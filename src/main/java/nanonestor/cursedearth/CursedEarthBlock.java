@@ -1,4 +1,4 @@
-package tfar.cursedearth;
+package nanonestor.cursedearth;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -12,26 +12,21 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.GrassBlock;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.List;
 
-import static tfar.cursedearth.CursedEarth.ServerConfig.*;
-
 public class CursedEarthBlock extends GrassBlock {
-    public static final Block cursed_earth = new CursedEarthBlock(Properties.copy(Blocks.GRASS_BLOCK));
+    public static final Block cursed_earth = new CursedEarthBlock(Properties.ofFullCopy(Blocks.GRASS_BLOCK));
     public static final Item cursed_earth_item = new BlockItem(cursed_earth,new Item.Properties());
 
     public CursedEarthBlock(Properties properties) {
@@ -45,7 +40,7 @@ public class CursedEarthBlock extends GrassBlock {
     }
 
     public void schedule(BlockPos pos,Level level) {
-             level.scheduleTick(pos, this, level.random.nextInt(maxTickTime.get() - minTickTime.get()));
+             level.scheduleTick(pos, this, level.random.nextInt(CursedEarth.ServerConfig.maxTickTime.get() - CursedEarth.ServerConfig.minTickTime.get()));
     }
 
     @Override
@@ -85,14 +80,14 @@ public class CursedEarthBlock extends GrassBlock {
                 return; // Forge: prevent loading unloaded chunks when checking neighbor's light and spreading
 
             boolean dark = world.getMaxLocalRawBrightness(pos.above()) <= 7;
-            if (!dark && diesInSunlight.get()) {
+            if (!dark && CursedEarth.ServerConfig.diesInSunlight.get()) {
                 world.setBlockAndUpdate(pos, Blocks.DIRT.defaultBlockState());
                 BlockPos up = pos.above();
                 if (world.getBlockState(up).isAir()) {
                     world.setBlockAndUpdate(up,Blocks.FIRE.defaultBlockState());
                 }
             } else {
-                if (dark && naturallySpreads.get() && world.getBlockState(pos.above()).isAir()) {
+                if (dark && CursedEarth.ServerConfig.naturallySpreads.get() && world.getBlockState(pos.above()).isAir()) {
                     BlockState blockstate = this.defaultBlockState();
                     for (int i = 0; i < 4; ++i) {
                         BlockPos pos1 = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
@@ -107,7 +102,7 @@ public class CursedEarthBlock extends GrassBlock {
             if (!world.getFluidState(pos.above()).isEmpty()) return;
             //don't spawn in peaceful
             if (world.getLevelData().getDifficulty() == Difficulty.PEACEFUL) return;
-            int r = spawnRadius.get();
+            int r = CursedEarth.ServerConfig.spawnRadius.get();
             if (world.getEntitiesOfClass(Player.class, new AABB(-r, -r, -r, r, r, r)).size() > 0)
                 return;
             Entity en = findMonsterToSpawn(world, pos.above(), random);
@@ -119,7 +114,7 @@ public class CursedEarthBlock extends GrassBlock {
         }
     }
 
-    @Override
+
     public boolean isValidBonemealTarget(LevelReader world, BlockPos pos, BlockState state, boolean p_176473_4_) {
         return false;//no
     }
@@ -151,7 +146,7 @@ public class CursedEarthBlock extends GrassBlock {
         //can the mob actually spawn here naturally, filters out mobs such as slimes which have more specific spawn requirements but
         // still show up in spawnlist; ignore them when force spawning
         if (!SpawnPlacements.checkSpawnRules(entry.type, world, MobSpawnType.NATURAL, pos, world.random)
-                && !forceSpawn.get())
+                && !CursedEarth.ServerConfig.forceSpawn.get())
             return null;
         EntityType<?> type = entry.type;
         Entity ent = type.create(world);

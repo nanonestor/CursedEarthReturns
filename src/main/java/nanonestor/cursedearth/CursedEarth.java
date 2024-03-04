@@ -1,4 +1,4 @@
-package tfar.cursedearth;
+package nanonestor.cursedearth;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColor;
@@ -8,7 +8,6 @@ import net.minecraft.client.color.item.ItemColors;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -17,7 +16,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -31,7 +29,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -82,8 +79,8 @@ public class CursedEarth {
         ClientConfig(ForgeConfigSpec.Builder builder) {
             builder.push("client");
             color = builder
-                    .comment("Color of cursed earth, pick #CC00FF for the 1.6-1.7 style, pick #222222 for newer versions")
-                    .define("color", "#00FFFF", String.class::isInstance);
+                    .comment("Color of cursed earth, pick #CC00FF classic style color, pick #222222 for brighter newage color, or any hex code color you would like.")
+                    .define("color", "#CC00FF", String.class::isInstance);
             builder.pop();
         }
     }
@@ -148,9 +145,9 @@ public class CursedEarth {
     private void rose(PlayerInteractEvent.RightClickBlock e) {
         if (!ServerConfig.witherRose.get()) return;
         Player p = e.getEntity();
-        Level w = p.level;
+        Level w = p.level();
         BlockPos pos = e.getPos();
-        if (p.isShiftKeyDown() && !w.isClientSide && e.getItemStack().getItem() ==
+        if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
                 BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
             e.setCanceled(true);
