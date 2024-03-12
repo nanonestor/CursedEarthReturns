@@ -21,21 +21,20 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
-
-import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(CursedEarth.MODID)
 public class CursedEarth {
@@ -56,27 +55,27 @@ public class CursedEarth {
             bus.addListener(this::onClientSetup);
         }
         bus.addListener(this::blocks);
-        EVENT_BUS.addListener(this::rose);
+        NeoForge.EVENT_BUS.addListener(this::rose);
     }
 
     public static final ServerConfig SERVER;
-    public static final ForgeConfigSpec SERVER_SPEC;
+    public static final ModConfigSpec SERVER_SPEC;
     public static final ClientConfig CLIENT;
-    public static final ForgeConfigSpec CLIENT_SPEC;
+    public static final ModConfigSpec CLIENT_SPEC;
 
     static {
-        final Pair<ServerConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(ServerConfig::new);
+        final Pair<ServerConfig, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(ServerConfig::new);
         SERVER_SPEC = specPair.getRight();
         SERVER = specPair.getLeft();
-        final Pair<ClientConfig, ForgeConfigSpec> specPair2 = new ForgeConfigSpec.Builder().configure(ClientConfig::new);
+        final Pair<ClientConfig, ModConfigSpec> specPair2 = new ModConfigSpec.Builder().configure(ClientConfig::new);
         CLIENT_SPEC = specPair2.getRight();
         CLIENT = specPair2.getLeft();
     }
 
     public static class ClientConfig {
-        public static ForgeConfigSpec.ConfigValue<String> color;
+        public static ModConfigSpec.ConfigValue<String> color;
 
-        ClientConfig(ForgeConfigSpec.Builder builder) {
+        ClientConfig(ModConfigSpec.Builder builder) {
             builder.push("client");
             color = builder
                     .comment("Color of cursed earth, pick #CC00FF classic style color, pick #222222 for brighter newage color, or any hex code color you would like.")
@@ -87,16 +86,17 @@ public class CursedEarth {
 
     public static class ServerConfig {
 
-        public static ForgeConfigSpec.IntValue minTickTime;
-        public static ForgeConfigSpec.IntValue maxTickTime;
-        public static ForgeConfigSpec.BooleanValue forceSpawn;
-        public static ForgeConfigSpec.BooleanValue diesInSunlight;
-        public static ForgeConfigSpec.BooleanValue naturallySpreads;
-        public static ForgeConfigSpec.IntValue spawnRadius;
-        public static ForgeConfigSpec.BooleanValue witherRose;
-        public static ForgeConfigSpec.ConfigValue<String> item;
+        public static ModConfigSpec.IntValue minTickTime;
+        public static ModConfigSpec.IntValue maxTickTime;
 
-        ServerConfig(ForgeConfigSpec.Builder builder) {
+        public static ModConfigSpec.BooleanValue forceSpawn;
+        public static ModConfigSpec.BooleanValue diesInSunlight;
+        public static ModConfigSpec.BooleanValue naturallySpreads;
+        public static ModConfigSpec.IntValue spawnRadius;
+        public static ModConfigSpec.BooleanValue witherRose;
+        public static ModConfigSpec.ConfigValue<String> item;
+
+        ServerConfig(ModConfigSpec.Builder builder) {
             builder.push("general");
 
             minTickTime = builder

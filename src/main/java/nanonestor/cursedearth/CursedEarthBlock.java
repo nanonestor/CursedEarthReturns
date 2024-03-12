@@ -14,7 +14,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -22,12 +21,17 @@ import net.minecraft.world.level.block.GrassBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+
 
 import java.util.List;
 
 public class CursedEarthBlock extends GrassBlock {
-    public static final Block cursed_earth = new CursedEarthBlock(Properties.copy(Blocks.GRASS_BLOCK));
+    public static final Block cursed_earth = new CursedEarthBlock(Properties.ofFullCopy(Blocks.GRASS_BLOCK));
     public static final Item cursed_earth_item = new BlockItem(cursed_earth,new Item.Properties());
+    public ModConfigSpec.IntValue maxTickTime;
+    public ModConfigSpec.IntValue minTickTime;
 
     public CursedEarthBlock(Properties properties) {
         super(properties);
@@ -39,8 +43,11 @@ public class CursedEarthBlock extends GrassBlock {
         schedule(pos, world);
     }
 
+
+
+// tickDiff = maxTickTime - minTickTime;
     public void schedule(BlockPos pos,Level level) {
-             level.scheduleTick(pos, this, level.random.nextInt(CursedEarth.ServerConfig.maxTickTime.get() - CursedEarth.ServerConfig.minTickTime.get()));
+        level.scheduleTick(pos, this, level.random.nextInt(CursedEarth.ServerConfig.maxTickTime.getAsInt() - CursedEarth.ServerConfig.minTickTime.getAsInt()));
     }
 
     @Override
@@ -114,10 +121,10 @@ public class CursedEarthBlock extends GrassBlock {
         }
     }
 
-    @Override
-    public boolean isValidBonemealTarget(LevelReader world, BlockPos pos, BlockState state, boolean p_176473_4_) {
-        return false;//no
-    }
+ //
+ //   public boolean isValidBonemealTarget(LevelReader world, BlockPos pos, BlockState state, boolean p_176473_4_) {
+ //       return false;//no
+ //   }
 
     @Override
     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
