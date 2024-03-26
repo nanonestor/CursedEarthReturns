@@ -105,7 +105,7 @@ public class CursedEarth {
                     .define("color_cursed_earth", "#CC00FF", String.class::isInstance);
             color_blessed_earth = builder
                     .comment("Color of cursed earth, pick #CC00FF classic style color, pick #222222 for brighter newage color, or any hex code color you would like.")
-                    .define("color_blessed_earth", "#222222", String.class::isInstance);
+                    .define("color_blessed_earth", "#00BCD4", String.class::isInstance);
             builder.pop();
         }
     }
