@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "FFF",
+    "FWF",
+    "FFF"
+  ],
+  "key": {
+    "F": {
+      "tag": "minecraft:flowers"
+    },
+    "W": {
+      "item": "minecraft:wither_rose"
+    }
+  },
+  "result": {
+    "item": "cursedearth:blessed_flower",
+    "count": 1
+  }
+}

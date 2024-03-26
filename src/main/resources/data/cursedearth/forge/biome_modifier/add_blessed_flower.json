@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#cursedearth:blessed_flower_spawnlist",
+  "features": "cursedearth:blessed_flower",
+  "step": "vegetal_decoration"
+}

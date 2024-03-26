@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.GrassBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.event.entity.living.MobSpawnEvent;
 
 import java.util.List;
 
@@ -40,7 +41,9 @@ public class CursedEarthBlock extends GrassBlock {
     }
 
     public void schedule(BlockPos pos,Level level) {
-             level.scheduleTick(pos, this, level.random.nextInt(CursedEarth.ServerConfig.maxTickTime.get() - CursedEarth.ServerConfig.minTickTime.get()));
+        int maxTime = CursedEarth.ServerConfig.maxTickTime.get();
+        int minTime = CursedEarth.ServerConfig.minTickTime.get();
+        level.scheduleTick(pos, this, level.random.nextInt(maxTime - minTime));
     }
 
     @Override
@@ -138,7 +141,6 @@ public class CursedEarthBlock extends GrassBlock {
         if (spawnOptions.size() == 0) {
             return null;
         }
-
 
 
         int found = rand.nextInt(spawnOptions.size());
