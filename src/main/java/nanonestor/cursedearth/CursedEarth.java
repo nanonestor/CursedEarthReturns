@@ -189,6 +189,8 @@ public class CursedEarth {
 
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
                 BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.cursed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                // Below if wanting to allow only vanilla WITHER_ROSE item, instead of above
+                // Items.WITHER_ROSE && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
             p.getItemInHand(p.getUsedItemHand()).shrink(1);
             e.setCanceled(true);
@@ -196,6 +198,8 @@ public class CursedEarth {
 
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
                 BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.blessed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                // Below if wanting to only allow mod's blessed_flower_item, instead of above
+                // BlessedFlowerBlock.blessed_flower_item && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, BlessedEarthBlock.blessed_earth.defaultBlockState());
             p.getItemInHand(p.getUsedItemHand()).shrink(1);
             e.setCanceled(true);
