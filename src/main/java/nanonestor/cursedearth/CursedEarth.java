@@ -39,7 +39,6 @@ import net.minecraftforge.registries.RegistryObject;
 import org.apache.commons.lang3.tuple.Pair;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 
 import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
 
@@ -182,6 +181,7 @@ public class CursedEarth {
     }
 
     private void rose(PlayerInteractEvent.RightClickBlock e) {
+
         if (!ServerConfig.witherRose.get()) return;
         Player p = e.getEntity();
         Level w = p.level();
@@ -190,11 +190,14 @@ public class CursedEarth {
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
                 BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.cursed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
+            p.getItemInHand(p.getUsedItemHand()).shrink(1);
             e.setCanceled(true);
         }
+
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
                 BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.blessed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, BlessedEarthBlock.blessed_earth.defaultBlockState());
+            p.getItemInHand(p.getUsedItemHand()).shrink(1);
             e.setCanceled(true);
         }
     }

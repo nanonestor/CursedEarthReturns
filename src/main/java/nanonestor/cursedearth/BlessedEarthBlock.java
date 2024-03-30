@@ -22,7 +22,6 @@ import net.minecraft.world.level.block.GrassBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.event.entity.living.MobSpawnEvent;
 
 import java.util.List;
 
