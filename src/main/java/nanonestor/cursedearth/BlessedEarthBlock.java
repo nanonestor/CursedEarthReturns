@@ -44,7 +44,7 @@ public class BlessedEarthBlock extends GrassBlock {
         level.scheduleTick(pos, this, level.random.nextInt(maxTime - minTime));
     }
 
-    @Override
+
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (player.getItemInHand(hand).isEmpty() && player.isShiftKeyDown()) {
             if (!world.isClientSide) {
@@ -155,7 +155,7 @@ public class BlessedEarthBlock extends GrassBlock {
         EntityType<?> type = entry.type;
         Entity ent = type.create(world);
         if (ent instanceof Mob)
-            ((Mob) ent).finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.MOB_SUMMONED, null, null);
+            ((Mob) ent).finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.MOB_SUMMONED, null);
         return ent;
     }
 }
