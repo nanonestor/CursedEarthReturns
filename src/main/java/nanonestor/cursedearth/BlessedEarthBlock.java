@@ -39,8 +39,8 @@ public class BlessedEarthBlock extends GrassBlock {
         schedule(pos, world);
     }
     public void schedule(BlockPos pos,Level level) {
-        int maxTime = (3 * CursedEarth.ServerConfig.maxTickTime.get());
-        int minTime = (2 * CursedEarth.ServerConfig.minTickTime.get());
+        int maxTime = (3 * CursedEarthConfig.GENERAL.maxTickTime.get());
+        int minTime = (2 * CursedEarthConfig.GENERAL.minTickTime.get());
         level.scheduleTick(pos, this, level.random.nextInt(maxTime - minTime));
     }
 
@@ -88,7 +88,7 @@ public class BlessedEarthBlock extends GrassBlock {
                //     world.setBlockAndUpdate(up,Blocks.FIRE.defaultBlockState());
                // }
             } else {
-                if (!dark && CursedEarth.ServerConfig.naturallySpreads.get() && world.getBlockState(pos.above()).isAir()) {
+                if (!dark && CursedEarthConfig.GENERAL.naturallySpreads.get() && world.getBlockState(pos.above()).isAir()) {
                     BlockState blockstate = this.defaultBlockState();
                     for (int i = 0; i < 4; ++i) {
                         BlockPos pos1 = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
@@ -105,7 +105,7 @@ public class BlessedEarthBlock extends GrassBlock {
             if (world.getLevelData().getDifficulty() == Difficulty.PEACEFUL) return;
 
             if (!dark) {
-                int r = CursedEarth.ServerConfig.spawnRadius.get();
+                int r = CursedEarthConfig.GENERAL.spawnRadius.get();
                 if (world.getEntitiesOfClass(Player.class, new AABB(-r, -r, -r, r, r, r)).size() > 0)
                     return;
                 Entity en2 = findMobToSpawn(world, pos.above(), random);

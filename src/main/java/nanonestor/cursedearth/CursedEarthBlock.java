@@ -22,8 +22,6 @@ import net.minecraft.world.level.block.GrassBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.common.ModConfigSpec;
-
 
 
 import java.util.List;
@@ -43,8 +41,8 @@ public class CursedEarthBlock extends GrassBlock {
     }
 
     public void schedule(BlockPos pos,Level level) {
-        int maxTime = CursedEarth.ServerConfig.maxTickTime.get();
-        int minTime = CursedEarth.ServerConfig.minTickTime.get();
+        int maxTime = CursedEarthConfig.GENERAL.maxTickTime.get();
+        int minTime = CursedEarthConfig.GENERAL.minTickTime.get();
         level.scheduleTick(pos, this, level.random.nextInt(maxTime - minTime));
     }
 
@@ -85,14 +83,14 @@ public class CursedEarthBlock extends GrassBlock {
                 return; // Forge: prevent loading unloaded chunks when checking neighbor's light and spreading
 
             boolean dark = world.getMaxLocalRawBrightness(pos.above()) <= 7;
-            if (!dark && CursedEarth.ServerConfig.diesInSunlight.get()) {
+            if (!dark && CursedEarthConfig.GENERAL.diesInSunlight.get()) {
                 world.setBlockAndUpdate(pos, Blocks.DIRT.defaultBlockState());
                 BlockPos up = pos.above();
                 if (world.getBlockState(up).isAir()) {
                     world.setBlockAndUpdate(up,Blocks.FIRE.defaultBlockState());
                 }
             } else {
-                if (dark && CursedEarth.ServerConfig.naturallySpreads.get() && world.getBlockState(pos.above()).isAir()) {
+                if (dark && CursedEarthConfig.GENERAL.naturallySpreads.get() && world.getBlockState(pos.above()).isAir()) {
                     BlockState blockstate = this.defaultBlockState();
                     for (int i = 0; i < 4; ++i) {
                         BlockPos pos1 = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
@@ -107,7 +105,7 @@ public class CursedEarthBlock extends GrassBlock {
             if (!world.getFluidState(pos.above()).isEmpty()) return;
             //don't spawn in peaceful
             if (world.getLevelData().getDifficulty() == Difficulty.PEACEFUL) return;
-            int r = CursedEarth.ServerConfig.spawnRadius.get();
+            int r = CursedEarthConfig.GENERAL.spawnRadius.get();
             if (world.getEntitiesOfClass(Player.class, new AABB(-r, -r, -r, r, r, r)).size() > 0)
                 return;
             Entity en = findMonsterToSpawn(world, pos.above(), random);
@@ -150,7 +148,7 @@ public class CursedEarthBlock extends GrassBlock {
         //can the mob actually spawn here naturally, filters out mobs such as slimes which have more specific spawn requirements but
         // still show up in spawnlist; ignore them when force spawning
         if (!SpawnPlacements.checkSpawnRules(entry.type, world, MobSpawnType.NATURAL, pos, world.random)
-                && !CursedEarth.ServerConfig.forceSpawn.get())
+                && !CursedEarthConfig.GENERAL.forceSpawn.get())
             return null;
         EntityType<?> type = entry.type;
         Entity ent = type.create(world);

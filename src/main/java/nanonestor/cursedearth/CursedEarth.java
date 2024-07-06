@@ -16,36 +16,32 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.RegisterEvent;
-import org.apache.commons.lang3.tuple.Pair;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.registries.*;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+
+import java.util.Objects;
 
 @Mod(CursedEarth.MODID)
 public class CursedEarth {
 
-
     public static final String MODID = "cursedearth";
+
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("cursed_earth", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.COMBAT)
@@ -57,106 +53,25 @@ public class CursedEarth {
                 output.accept(BlessedFlowerBlock.blessed_flower_item.getDefaultInstance());
             }).build());
 
-    public static final TagKey<EntityType<?>> blacklisted_entities = create(new ResourceLocation(MODID, "blacklisted"));
-    public static final TagKey<Block> spreadable = BlockTags.create(new ResourceLocation(MODID, "spreadable"));
+    public static final TagKey<EntityType<?>> blacklisted_entities = create(ResourceLocation.fromNamespaceAndPath(MODID, "blacklisted"));
+    public static final TagKey<Block> spreadable = BlockTags.create(ResourceLocation.fromNamespaceAndPath(MODID, "spreadable"));
+
 
     private static TagKey<EntityType<?>> create(ResourceLocation p_203849_) {
         return TagKey.create(Registries.ENTITY_TYPE, p_203849_);
     }
 
-    public CursedEarth() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SERVER_SPEC);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
-        IEventBus modEventBus = ModLoadingContext.get().getActiveContainer().getEventBus();
+    public CursedEarth(IEventBus modEventBus, ModContainer modContainer) {
+
+        modContainer.registerConfig(ModConfig.Type.SERVER, CursedEarthConfig.GENERAL_SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, CursedEarthConfig.CLIENT_SPEC);
+
         if (FMLEnvironment.dist.isClient()) {
             modEventBus.addListener(this::onClientSetup);
         }
         modEventBus.addListener(this::blocks);
         NeoForge.EVENT_BUS.addListener(this::rose);
-
         CREATIVE_MODE_TABS.register(modEventBus);
-        //modEventBus.addListener(this::addCreative)
-    }
-
-    public static final ServerConfig SERVER;
-    public static final ModConfigSpec SERVER_SPEC;
-    public static final ClientConfig CLIENT;
-    public static final ModConfigSpec CLIENT_SPEC;
-
-    static {
-        final Pair<ServerConfig, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(ServerConfig::new);
-        SERVER_SPEC = specPair.getRight();
-        SERVER = specPair.getLeft();
-        final Pair<ClientConfig, ModConfigSpec> specPair2 = new ModConfigSpec.Builder().configure(ClientConfig::new);
-        CLIENT_SPEC = specPair2.getRight();
-        CLIENT = specPair2.getLeft();
-    }
-
-    public static class ClientConfig {
-        public static ModConfigSpec.ConfigValue<String> color_cursed_earth;
-        public static ModConfigSpec.ConfigValue<String> color_blessed_earth;
-
-        ClientConfig(ModConfigSpec.Builder builder) {
-            builder.push("client");
-            color_cursed_earth = builder
-                    .comment("Color of cursed earth, pick #CC00FF classic style color, pick #222222 for brighter newage color, or any hex code color you would like.")
-                    .define("color_cursed_earth", "#CC00FF", String.class::isInstance);
-            color_blessed_earth = builder
-                    .comment("Color of cursed earth, pick #CC00FF classic style color, pick #222222 for brighter newage color, or any hex code color you would like.")
-                    .define("color_blessed_earth", "#00BCD4", String.class::isInstance);
-            builder.pop();
-        }
-    }
-
-    public static class ServerConfig {
-
-        public static ModConfigSpec.IntValue minTickTime;
-        public static ModConfigSpec.IntValue maxTickTime;
-        public static ModConfigSpec.BooleanValue forceSpawn;
-        public static ModConfigSpec.BooleanValue diesInSunlight;
-        public static ModConfigSpec.BooleanValue naturallySpreads;
-        public static ModConfigSpec.IntValue spawnRadius;
-        public static ModConfigSpec.BooleanValue witherRose;
-        public static ModConfigSpec.ConfigValue<String> cursed_item;
-        public static ModConfigSpec.ConfigValue<String> blessed_item;
-
-        ServerConfig(ModConfigSpec.Builder builder) {
-            builder.push("general");
-
-            minTickTime = builder
-                    .comment("minimum time between spawns in ticks")
-                    .defineInRange("min tick time", 75, 1, Integer.MAX_VALUE);
-            maxTickTime = builder
-                    .comment("maximum time between spawns in ticks")
-                    .defineInRange("max tick time", 600, 1, Integer.MAX_VALUE);
-            forceSpawn = builder
-                    .comment("Force spawns to occur regardless of conditions such as light level and elevation")
-                    .define("force spawns", false);
-            diesInSunlight = builder
-                    .comment("does cursed earth die in sunlight")
-                    .define("die in sunlight", true);
-            naturallySpreads = builder
-                    .comment("does cursed earth naturally spread")
-                    .define("naturally spread", true);
-            witherRose = builder
-                    .comment("does the wither rose make cursed earth")
-                    .define("wither rose", true);
-            spawnRadius = builder
-                    .comment("minimum distance cursed earth has to be away from players before it spawns mobs")
-                    .defineInRange("spawn radius", 1, 1, Integer.MAX_VALUE);
-
-            cursed_item = builder
-                    .comment("item used to create cursed earth")
-                    .define("cursed_item", BuiltInRegistries.ITEM.getKey(Items.WITHER_ROSE).toString(), o -> o instanceof String s&&
-                            BuiltInRegistries.ITEM.getOptional(new ResourceLocation(s)).isPresent());
-
-            blessed_item = builder
-                    .comment("item used to create blessed earth")
-                    .define("blessed_item", ("cursedearth:blessed_flower").toString(), o -> o instanceof String s&&
-                            BuiltInRegistries.ITEM.getOptional(new ResourceLocation(s)).isPresent());
-
-            builder.pop();
-        }
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
@@ -164,30 +79,29 @@ public class CursedEarth {
         ItemBlockRenderTypes.setRenderLayer(BlessedEarthBlock.blessed_earth, RenderType.cutout());
     }
 
-    public void blocks(final RegisterEvent event) {
+    public void blocks(RegisterEvent event) {
 
-        event.register(Registries.BLOCK,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth);
-
-        event.register(Registries.ITEM,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth_item);
-
-        event.register(Registries.BLOCK,new ResourceLocation(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth);
-
-        event.register(Registries.ITEM,new ResourceLocation(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth_item);
-
-        event.register(Registries.BLOCK,new ResourceLocation(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower);
-
-        event.register(Registries.ITEM,new ResourceLocation(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower_item);
+        event.register(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MODID, "cursed_earth"),() -> CursedEarthBlock.cursed_earth);
+        event.register(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth_item);
+        event.register(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth);
+        event.register(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth_item);
+        event.register(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower);
+        event.register(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower_item);
     }
 
     private void rose(PlayerInteractEvent.RightClickBlock e) {
 
-        if (!ServerConfig.witherRose.get()) return;
+        // This disables using items to create either earth types if the doItemsMakeEarth config setting is false.
+        if (!CursedEarthConfig.GENERAL.doItemsMakeEarth.get()) return;
+
         Player p = e.getEntity();
         Level w = p.level();
         BlockPos pos = e.getPos();
+        boolean isBlockSpreadable = w.getBlockState(pos).is(spreadable);
+
 
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
-                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.cursed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(CursedEarthConfig.GENERAL.cursedItem.get())) && isBlockSpreadable ) {
             // Below if wanting to allow only vanilla WITHER_ROSE item, instead of above
             // Items.WITHER_ROSE && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
@@ -196,7 +110,7 @@ public class CursedEarth {
         }
 
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
-                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.blessed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(CursedEarthConfig.GENERAL.blessedItem.get())) && isBlockSpreadable ) {
             // Below if wanting to only allow mod's blessed_flower_item, instead of above
             // BlessedFlowerBlock.blessed_flower_item && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, BlessedEarthBlock.blessed_earth.defaultBlockState());
@@ -210,8 +124,8 @@ public class CursedEarth {
         @SubscribeEvent
         public static void color(FMLClientSetupEvent e) {
             BlockColors blockColors = Minecraft.getInstance().getBlockColors();
-            BlockColor iBlockColor = (blockState, iEnviromentBlockReader, blockPos, i) -> Integer.decode(ClientConfig.color_cursed_earth.get());
-            BlockColor jBlockColor = (blockState, iEnviromentBlockReader, blockPos, i) -> Integer.decode(ClientConfig.color_blessed_earth.get());
+            BlockColor iBlockColor = (blockState, iEnviromentBlockReader, blockPos, i) -> Integer.decode(CursedEarthConfig.CLIENT.color_cursed_earth.get());
+            BlockColor jBlockColor = (blockState, iEnviromentBlockReader, blockPos, i) -> Integer.decode(CursedEarthConfig.CLIENT.color_blessed_earth.get());
 
             blockColors.register(iBlockColor, CursedEarthBlock.cursed_earth);
             blockColors.register(jBlockColor, BlessedEarthBlock.blessed_earth);
