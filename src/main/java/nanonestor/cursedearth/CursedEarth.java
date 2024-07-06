@@ -103,7 +103,7 @@ public class CursedEarth {
                     .comment("Color of cursed earth, pick #CC00FF classic style color, pick #222222 for brighter newage color, or any hex code color you would like.")
                     .define("color_cursed_earth", "#CC00FF", String.class::isInstance);
             color_blessed_earth = builder
-                    .comment("Color of cursed earth, pick #CC00FF classic style color, pick #222222 for brighter newage color, or any hex code color you would like.")
+                    .comment("Color of blessed earth, default value is #00BCD4")
                     .define("color_blessed_earth", "#00BCD4", String.class::isInstance);
             builder.pop();
         }
@@ -117,7 +117,7 @@ public class CursedEarth {
         public static ForgeConfigSpec.BooleanValue diesInSunlight;
         public static ForgeConfigSpec.BooleanValue naturallySpreads;
         public static ForgeConfigSpec.IntValue spawnRadius;
-        public static ForgeConfigSpec.BooleanValue witherRose;
+        public static ForgeConfigSpec.BooleanValue doItemsMakeEarth;
         public static ForgeConfigSpec.ConfigValue<String> cursed_item;
         public static ForgeConfigSpec.ConfigValue<String> blessed_item;
 
@@ -139,18 +139,16 @@ public class CursedEarth {
             naturallySpreads = builder
                     .comment("does cursed earth naturally spread")
                     .define("naturally spread", true);
-            witherRose = builder
-                    .comment("does the wither rose make cursed earth")
-                    .define("wither rose", true);
+            doItemsMakeEarth = builder
+                    .comment("do the items set as 'cursed item' and 'blessed item' make earths - set false to disable")
+                    .define("do items make earth", true);
             spawnRadius = builder
                     .comment("minimum distance cursed earth has to be away from players before it spawns mobs")
                     .defineInRange("spawn radius", 1, 1, Integer.MAX_VALUE);
-
             cursed_item = builder
                     .comment("item used to create cursed earth")
                     .define("cursed_item", BuiltInRegistries.ITEM.getKey(Items.WITHER_ROSE).toString(), o -> o instanceof String s&&
                             BuiltInRegistries.ITEM.getOptional(new ResourceLocation(s)).isPresent());
-
             blessed_item = builder
                     .comment("item used to create blessed earth")
                     .define("blessed_item", ("cursedearth:blessed_flower").toString(), o -> o instanceof String s&&
@@ -182,13 +180,14 @@ public class CursedEarth {
 
     private void rose(PlayerInteractEvent.RightClickBlock e) {
 
-        if (!ServerConfig.witherRose.get()) return;
+        if (!ServerConfig.doItemsMakeEarth.get()) return;
         Player p = e.getEntity();
         Level w = p.level();
         BlockPos pos = e.getPos();
+        boolean isBlockSpreadable = w.getBlockState(pos).is(spreadable);
 
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
-                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.cursed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.cursed_item.get())) && isBlockSpreadable ) {
                 // Below if wanting to allow only vanilla WITHER_ROSE item, instead of above
                 // Items.WITHER_ROSE && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
@@ -197,7 +196,7 @@ public class CursedEarth {
         }
 
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
-                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.blessed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.blessed_item.get())) && isBlockSpreadable ) {
                 // Below if wanting to only allow mod's blessed_flower_item, instead of above
                 // BlessedFlowerBlock.blessed_flower_item && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, BlessedEarthBlock.blessed_earth.defaultBlockState());
