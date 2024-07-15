@@ -20,7 +20,6 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -40,6 +39,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 
+
 import static net.minecraftforge.common.MinecraftForge.EVENT_BUS;
 
 @Mod(CursedEarth.MODID)
@@ -51,15 +51,15 @@ public class CursedEarth {
     public static final RegistryObject<CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("cursed_earth", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .title(Component.nullToEmpty("Cursed Earth"))
-            .icon(() -> CursedEarthBlock.cursed_earth_item.getDefaultInstance())
+            .icon(CursedEarthBlock.cursed_earth_item::getDefaultInstance)
             .displayItems((parameters, output) -> {
                 output.accept(CursedEarthBlock.cursed_earth_item.getDefaultInstance()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
                 output.accept(BlessedEarthBlock.blessed_earth_item.getDefaultInstance());
                 output.accept(BlessedFlowerBlock.blessed_flower_item.getDefaultInstance());
             }).build());
 
-    public static final TagKey<EntityType<?>> blacklisted_entities = create(new ResourceLocation(MODID, "blacklisted"));
-    public static final TagKey<Block> spreadable = BlockTags.create(new ResourceLocation(MODID, "spreadable"));
+    public static final TagKey<EntityType<?>> blacklisted_entities = create(ResourceLocation.fromNamespaceAndPath(MODID, "blacklisted"));
+    public static final TagKey<Block> spreadable = BlockTags.create(ResourceLocation.fromNamespaceAndPath(MODID, "spreadable"));
 
     private static TagKey<EntityType<?>> create(ResourceLocation p_203849_) {
         return TagKey.create(Registries.ENTITY_TYPE, p_203849_);
@@ -117,7 +117,7 @@ public class CursedEarth {
         public static ForgeConfigSpec.BooleanValue diesInSunlight;
         public static ForgeConfigSpec.BooleanValue naturallySpreads;
         public static ForgeConfigSpec.IntValue spawnRadius;
-        public static ForgeConfigSpec.BooleanValue witherRose;
+        public static ForgeConfigSpec.BooleanValue doItemsMakeEarth;
         public static ForgeConfigSpec.ConfigValue<String> cursed_item;
         public static ForgeConfigSpec.ConfigValue<String> blessed_item;
 
@@ -139,23 +139,21 @@ public class CursedEarth {
             naturallySpreads = builder
                     .comment("does cursed earth naturally spread")
                     .define("naturally spread", true);
-            witherRose = builder
-                    .comment("does the wither rose make cursed earth")
-                    .define("wither rose", true);
+            doItemsMakeEarth = builder
+                    .comment("do the items set as 'cursed item' and 'blessed item' make earths - set false to disable")
+                    .define("do items make earth", true);
             spawnRadius = builder
                     .comment("minimum distance cursed earth has to be away from players before it spawns mobs")
                     .defineInRange("spawn radius", 1, 1, Integer.MAX_VALUE);
 
             cursed_item = builder
                     .comment("item used to create cursed earth")
-                    .define("cursed_item", BuiltInRegistries.ITEM.getKey(Items.WITHER_ROSE).toString(), o -> o instanceof String s&&
-                            BuiltInRegistries.ITEM.getOptional(new ResourceLocation(s)).isPresent());
-
+                    .define("cursed item", BuiltInRegistries.ITEM.getKey(Items.WITHER_ROSE).toString()); //, o -> o instanceof String s&&
+            //   BuiltInRegistries.ITEM.getOptional(new ResourceLocation(s).isPresent());
             blessed_item = builder
                     .comment("item used to create blessed earth")
-                    .define("blessed_item", ("cursedearth:blessed_flower").toString(), o -> o instanceof String s&&
-                            BuiltInRegistries.ITEM.getOptional(new ResourceLocation(s)).isPresent());
-
+                    .define("blessed item", ("cursedearth:blessed_flower"), o -> o instanceof String); //&&
+            //  BuiltInRegistries.ITEM.getOptional(ResourceLocation.tryParse(MODID)).isPresent());
             builder.pop();
         }
     }
@@ -167,28 +165,29 @@ public class CursedEarth {
 
     public void blocks(final RegisterEvent event) {
 
-        event.register(Registries.BLOCK,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth);
+        event.register(Registries.BLOCK,ResourceLocation.fromNamespaceAndPath(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth);
 
-        event.register(Registries.ITEM,new ResourceLocation(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth_item);
+        event.register(Registries.ITEM,ResourceLocation.fromNamespaceAndPath(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth_item);
 
-        event.register(Registries.BLOCK,new ResourceLocation(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth);
+        event.register(Registries.BLOCK,ResourceLocation.fromNamespaceAndPath(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth);
 
-        event.register(Registries.ITEM,new ResourceLocation(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth_item);
+        event.register(Registries.ITEM,ResourceLocation.fromNamespaceAndPath(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth_item);
 
-        event.register(Registries.BLOCK,new ResourceLocation(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower);
+        event.register(Registries.BLOCK,ResourceLocation.fromNamespaceAndPath(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower);
 
-        event.register(Registries.ITEM,new ResourceLocation(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower_item);
+        event.register(Registries.ITEM,ResourceLocation.fromNamespaceAndPath(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower_item);
     }
 
     private void rose(PlayerInteractEvent.RightClickBlock e) {
 
-        if (!ServerConfig.witherRose.get()) return;
+        if (!ServerConfig.doItemsMakeEarth.get()) return;
         Player p = e.getEntity();
         Level w = p.level();
         BlockPos pos = e.getPos();
+        boolean isBlockSpreadable = w.getBlockState(pos).is(spreadable);
 
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
-                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.cursed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(ServerConfig.cursed_item.get())) && isBlockSpreadable ) {
                 // Below if wanting to allow only vanilla WITHER_ROSE item, instead of above
                 // Items.WITHER_ROSE && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
@@ -197,7 +196,7 @@ public class CursedEarth {
         }
 
         if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
-                BuiltInRegistries.ITEM.get(new ResourceLocation(ServerConfig.blessed_item.get())) && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
+                BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(ServerConfig.blessed_item.get())) &&  isBlockSpreadable ) {
                 // Below if wanting to only allow mod's blessed_flower_item, instead of above
                 // BlessedFlowerBlock.blessed_flower_item && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
             w.setBlockAndUpdate(pos, BlessedEarthBlock.blessed_earth.defaultBlockState());

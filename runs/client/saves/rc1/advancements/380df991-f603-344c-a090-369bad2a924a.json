@@ -1,0 +1,24 @@
+{
+  "minecraft:recipes/decorations/crafting_table": {
+    "criteria": {
+      "unlock_right_away": "2024-07-05 22:39:50 -0700"
+    },
+    "done": true
+  },
+  "minecraft:recipes/misc/black_dye_from_wither_rose": {
+    "criteria": {
+      "has_wither_rose": "2024-07-05 22:40:28 -0700"
+    },
+    "done": true
+  },
+  "minecraft:adventure/adventuring_time": {
+    "criteria": {
+      "minecraft:desert": "2024-07-05 22:40:18 -0700",
+      "minecraft:mangrove_swamp": "2024-07-05 22:39:50 -0700",
+      "minecraft:bamboo_jungle": "2024-07-05 22:40:19 -0700",
+      "minecraft:windswept_savanna": "2024-07-05 22:41:15 -0700"
+    },
+    "done": false
+  },
+  "DataVersion": 3953
+}
