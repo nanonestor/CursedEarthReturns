@@ -113,8 +113,9 @@ public class CursedEarth {
 
         public static ForgeConfigSpec.IntValue minTickTime;
         public static ForgeConfigSpec.IntValue maxTickTime;
+        public static ForgeConfigSpec.IntValue burnLightLevel;
         public static ForgeConfigSpec.BooleanValue forceSpawn;
-        public static ForgeConfigSpec.BooleanValue diesInSunlight;
+        public static ForgeConfigSpec.BooleanValue diesFromLightLevel;
         public static ForgeConfigSpec.BooleanValue naturallySpreads;
         public static ForgeConfigSpec.IntValue spawnRadius;
         public static ForgeConfigSpec.BooleanValue doItemsMakeEarth;
@@ -130,15 +131,18 @@ public class CursedEarth {
             maxTickTime = builder
                     .comment("maximum time between spawns in ticks")
                     .defineInRange("max tick time", 600, 1, Integer.MAX_VALUE);
+            burnLightLevel = builder
+                    .comment("the light level above which cursed earth blocks burn - default 7 - allowed values 1 to 15")
+                    .defineInRange("burn light level", 7, 1, 15);
             forceSpawn = builder
                     .comment("Force spawns to occur regardless of conditions such as light level and elevation")
                     .define("force spawns", false);
-            diesInSunlight = builder
-                    .comment("does cursed earth die in sunlight")
-                    .define("die in sunlight", true);
+            diesFromLightLevel = builder
+                    .comment("does cursed earth die from light levels")
+                    .define("dies from light level", true);
             naturallySpreads = builder
                     .comment("does cursed earth naturally spread")
-                    .define("naturally spread", true);
+                    .define("naturally spreads", true);
             doItemsMakeEarth = builder
                     .comment("do the items set as 'cursed item' and 'blessed item' make earths - set false to disable")
                     .define("do items make earth", true);
