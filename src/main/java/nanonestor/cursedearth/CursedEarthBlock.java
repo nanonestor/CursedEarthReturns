@@ -82,8 +82,8 @@ public class CursedEarthBlock extends GrassBlock {
             if (!world.isAreaLoaded(pos, 3))
                 return; // Forge: prevent loading unloaded chunks when checking neighbor's light and spreading
 
-            boolean dark = world.getMaxLocalRawBrightness(pos.above()) <= 7;
-            if (!dark && CursedEarthConfig.GENERAL.diesInSunlight.get()) {
+            boolean dark = world.getMaxLocalRawBrightness(pos.above()) < CursedEarthConfig.GENERAL.burnLightLevel.get();
+            if (!dark && CursedEarthConfig.GENERAL.diesFromLightLevel.get()) {
                 world.setBlockAndUpdate(pos, Blocks.DIRT.defaultBlockState());
                 BlockPos up = pos.above();
                 if (world.getBlockState(up).isAir()) {
