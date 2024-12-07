@@ -8,6 +8,7 @@ import net.minecraft.client.color.item.ItemColors;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -18,8 +19,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -28,14 +28,22 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.registries.*;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforgespi.Environment;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 
 @Mod(CursedEarth.MODID)
 public class CursedEarth {
@@ -46,16 +54,29 @@ public class CursedEarth {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("cursed_earth", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .title(Component.nullToEmpty("Cursed Earth"))
-            .icon(() -> CursedEarthBlock.cursed_earth_item.getDefaultInstance())
+            .icon(() -> CursedEarth.cursed_earth_item.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
-                output.accept(CursedEarthBlock.cursed_earth_item.getDefaultInstance()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
-                output.accept(BlessedEarthBlock.blessed_earth_item.getDefaultInstance());
-                output.accept(BlessedFlowerBlock.blessed_flower_item.getDefaultInstance());
+                output.accept(CursedEarth.cursed_earth_item.get().getDefaultInstance()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
+                output.accept(CursedEarth.blessed_earth_item.get().getDefaultInstance());
+                output.accept(CursedEarth.blessed_flower_item.get().getDefaultInstance());
             }).build());
+
+
+
+
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
+    public static final DeferredBlock<Block> cursed_earth = BLOCKS.registerBlock("cursed_earth", CursedEarthBlock::new, BlockBehaviour.Properties.ofFullCopy(Blocks.GRASS_BLOCK));
+    public static final DeferredBlock<Block> blessed_earth = BLOCKS.registerBlock("blessed_earth", BlessedEarthBlock::new, BlockBehaviour.Properties.ofFullCopy(Blocks.GRASS_BLOCK));
+    public static final DeferredBlock<Block> blessed_flower = BLOCKS.registerBlock("blessed_flower", BlessedFlowerBlock::new, BlockBehaviour.Properties.ofFullCopy(Blocks.DANDELION).noCollission().instabreak().sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ));
+
+
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
+    public static final DeferredItem<BlockItem> cursed_earth_item = ITEMS.registerSimpleBlockItem("cursed_earth", cursed_earth);
+    public static final DeferredItem<BlockItem> blessed_earth_item = ITEMS.registerSimpleBlockItem("blessed_earth", blessed_earth);
+    public static final DeferredItem<BlockItem> blessed_flower_item = ITEMS.registerSimpleBlockItem("blessed_flower", blessed_flower);
 
     public static final TagKey<EntityType<?>> blacklisted_entities = create(ResourceLocation.fromNamespaceAndPath(MODID, "blacklisted"));
     public static final TagKey<Block> spreadable = BlockTags.create(ResourceLocation.fromNamespaceAndPath(MODID, "spreadable"));
-
 
     private static TagKey<EntityType<?>> create(ResourceLocation p_203849_) {
         return TagKey.create(Registries.ENTITY_TYPE, p_203849_);
@@ -63,30 +84,21 @@ public class CursedEarth {
 
     public CursedEarth(IEventBus modEventBus, ModContainer modContainer) {
 
+        CREATIVE_MODE_TABS.register(modEventBus);
+        BLOCKS.register(modEventBus);
+        ITEMS.register(modEventBus);
+
         modContainer.registerConfig(ModConfig.Type.SERVER, CursedEarthConfig.GENERAL_SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, CursedEarthConfig.CLIENT_SPEC);
 
-        if (FMLEnvironment.dist.isClient()) {
-            modEventBus.addListener(this::onClientSetup);
-        }
-        modEventBus.addListener(this::blocks);
+        if (Environment.get().getDist().isClient()) { modEventBus.addListener(this::onClientSetup); }
         NeoForge.EVENT_BUS.addListener(this::rose);
-        CREATIVE_MODE_TABS.register(modEventBus);
+        NeoForge.EVENT_BUS.register(new MessageSpawns());
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
-        ItemBlockRenderTypes.setRenderLayer(CursedEarthBlock.cursed_earth, RenderType.cutout());
-        ItemBlockRenderTypes.setRenderLayer(BlessedEarthBlock.blessed_earth, RenderType.cutout());
-    }
-
-    public void blocks(RegisterEvent event) {
-
-        event.register(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MODID, "cursed_earth"),() -> CursedEarthBlock.cursed_earth);
-        event.register(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"cursed_earth"),() -> CursedEarthBlock.cursed_earth_item);
-        event.register(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth);
-        event.register(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"blessed_earth"),() -> BlessedEarthBlock.blessed_earth_item);
-        event.register(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower);
-        event.register(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(MODID,"blessed_flower"),() -> BlessedFlowerBlock.blessed_flower_item);
+        ItemBlockRenderTypes.setRenderLayer(CursedEarth.cursed_earth.get(), RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(CursedEarth.blessed_earth.get(), RenderType.cutout());
     }
 
     private void rose(PlayerInteractEvent.RightClickBlock e) {
@@ -99,21 +111,21 @@ public class CursedEarth {
         BlockPos pos = e.getPos();
         boolean isBlockSpreadable = w.getBlockState(pos).is(spreadable);
 
+        // Sets some holders to be used for comparison
+        Optional<Holder.Reference<Item>> theCursedItem = BuiltInRegistries.ITEM.get(Objects.requireNonNull(ResourceLocation.tryParse(CursedEarthConfig.GENERAL.cursedItem.get())));
+        Optional<Holder.Reference<Item>> theBlessedItem = BuiltInRegistries.ITEM.get(Objects.requireNonNull(ResourceLocation.tryParse(CursedEarthConfig.GENERAL.blessedItem.get())));
+        Optional<Holder.Reference<Item>> theHandItem = Optional.of(e.getItemStack().getItem().builtInRegistryHolder());
 
-        if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
-                BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(CursedEarthConfig.GENERAL.cursedItem.get())) && isBlockSpreadable ) {
-            // Below if wanting to allow only vanilla WITHER_ROSE item, instead of above
-            // Items.WITHER_ROSE && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
-            w.setBlockAndUpdate(pos, CursedEarthBlock.cursed_earth.defaultBlockState());
+        // Tests to see if the item in the hand is the same as the cursed item
+        if (p.isShiftKeyDown() && !w.isClientSide() && theHandItem.equals(theCursedItem) && isBlockSpreadable ) {
+            w.setBlockAndUpdate(pos, CursedEarth.cursed_earth.get().defaultBlockState());
             p.getItemInHand(p.getUsedItemHand()).shrink(1);
             e.setCanceled(true);
         }
 
-        if (p.isShiftKeyDown() && !w.isClientSide() && e.getItemStack().getItem() ==
-                BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(CursedEarthConfig.GENERAL.blessedItem.get())) && isBlockSpreadable ) {
-            // Below if wanting to only allow mod's blessed_flower_item, instead of above
-            // BlessedFlowerBlock.blessed_flower_item && w.getBlockState(pos).getBlock() == Blocks.DIRT) {
-            w.setBlockAndUpdate(pos, BlessedEarthBlock.blessed_earth.defaultBlockState());
+        // Tests to see if the item in the hand is the same as the blessed item
+        if (p.isShiftKeyDown() && !w.isClientSide() && theHandItem.equals(theBlessedItem) && isBlockSpreadable ) {
+            w.setBlockAndUpdate(pos, CursedEarth.blessed_earth.get().defaultBlockState());
             p.getItemInHand(p.getUsedItemHand()).shrink(1);
             e.setCanceled(true);
         }
@@ -127,8 +139,8 @@ public class CursedEarth {
             BlockColor iBlockColor = (blockState, iEnviromentBlockReader, blockPos, i) -> Integer.decode(CursedEarthConfig.CLIENT.color_cursed_earth.get());
             BlockColor jBlockColor = (blockState, iEnviromentBlockReader, blockPos, i) -> Integer.decode(CursedEarthConfig.CLIENT.color_blessed_earth.get());
 
-            blockColors.register(iBlockColor, CursedEarthBlock.cursed_earth);
-            blockColors.register(jBlockColor, BlessedEarthBlock.blessed_earth);
+            blockColors.register(iBlockColor, CursedEarth.cursed_earth.get());
+            blockColors.register(jBlockColor, CursedEarth.blessed_earth.get());
 
             ItemColors cursed_itemColors = Minecraft.getInstance().getItemColors();
             ItemColors blessed_itemColors = Minecraft.getInstance().getItemColors();
@@ -142,9 +154,11 @@ public class CursedEarth {
                 return blockColors.getColor(state, null, null, tintIndex);
             };
 
-            cursed_itemColors.register(cursed_itemBlockColor, CursedEarthBlock.cursed_earth);
-            blessed_itemColors.register(blessed_itemBlockColor, BlessedEarthBlock.blessed_earth);
+            cursed_itemColors.register(cursed_itemBlockColor, CursedEarth.cursed_earth);
+            blessed_itemColors.register(blessed_itemBlockColor, CursedEarth.blessed_earth);
         }
     }
+
 }
+
 

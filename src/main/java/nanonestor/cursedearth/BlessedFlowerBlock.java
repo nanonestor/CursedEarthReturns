@@ -1,24 +1,26 @@
 package nanonestor.cursedearth;
 
-import net.minecraft.core.Holder;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
+public class BlessedFlowerBlock extends GrassBlock {
 
-public class BlessedFlowerBlock extends FlowerBlock {
-
-
-    public static final Block blessed_flower = new BlessedFlowerBlock((Holder<MobEffect>) MobEffects.REGENERATION, 7, Properties.ofFullCopy(Blocks.DANDELION), BlockBehaviour.Properties.ofFullCopy(Blocks.DANDELION).noCollission().instabreak().sound(SoundType.GRASS).offsetType(BlockBehaviour.OffsetType.XZ));
-    public static final Item blessed_flower_item = new BlockItem(blessed_flower,new Item.Properties());
-
-    public BlessedFlowerBlock(Holder<MobEffect> stewEffect, int stewDuration, Properties properties, Properties offsetType) {
-        super(stewEffect, stewDuration, properties);
+    public BlessedFlowerBlock(Properties properties) {
+        super(properties.offsetType(OffsetType.XZ));
     }
 
+    protected static final VoxelShape SHAPE = Block.box(5.0D, 0.0D, 5.0D, 10.0D, 13.0D, 10.0D);
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+        Vec3 offset = state.getOffset(pos);
+        return SHAPE.move(offset.x, offset.y, offset.z);
+        //return SHAPE;
+    }
 }
