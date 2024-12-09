@@ -1,6 +1,8 @@
 package nanonestor.cursedearth;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerChunkCache;
@@ -46,73 +48,45 @@ public class CursedEarthBlock extends GrassBlock {
         level.scheduleTick(pos, this, level.random.nextInt(maxTime - minTime));
     }
 
-
-    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (player.getItemInHand(hand).isEmpty() && player.isShiftKeyDown()) {
-            if (!world.isClientSide) {
-
-                ServerChunkCache s = (ServerChunkCache) world.getChunkSource();
-                List<MobSpawnSettings.SpawnerData> entries = s.getGenerator()
-                        .getMobsAt(world.getBiome(pos), ((ServerLevel) world).structureManager(), MobCategory.MONSTER, pos.above())
-                        .unwrap().stream().filter(spawners -> !spawners.type.is(CursedEarth.blacklisted_entities)).toList();
-                // nothing can spawn, occurs in places such as mushroom biomes
-                if (entries.size() == 0) {
-                    player.displayClientMessage(Component.translatable("text.cursedearth.nospawns"), true);
-                } else {
-                    MutableComponent names = Component.literal("Mobs: ");
-                    for (int i = 0; i < entries.size(); i++) {
-                        MobSpawnSettings.SpawnerData spawners = entries.get(i);
-                        names.append(spawners.type.getDescription());
-                        if (i < entries.size() - 1) {
-                            names.append(Component.literal(", "));
-                        }
-                    }
-                    player.sendSystemMessage(names);
-                }
-            }
-            return InteractionResult.sidedSuccess(world.isClientSide);
-        }
-        return InteractionResult.PASS;
-    }
-
     @Override
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
-        if (!world.isClientSide) {
-            schedule(pos,world);
-            if (!world.isAreaLoaded(pos, 3))
-                return; // Forge: prevent loading unloaded chunks when checking neighbor's light and spreading
+    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (!level.isClientSide) {
+            schedule(pos,level);
 
-            boolean dark = world.getMaxLocalRawBrightness(pos.above()) < CursedEarthConfig.GENERAL.burnLightLevel.get();
+            // Prevent loading unloaded chunks when checking neighbor's light and spreading
+            if (!level.isAreaLoaded(pos, 3)) { return; }
+
+            boolean dark = level.getMaxLocalRawBrightness(pos.above()) < CursedEarthConfig.GENERAL.burnLightLevel.get();
             if (!dark && CursedEarthConfig.GENERAL.diesFromLightLevel.get()) {
-                world.setBlockAndUpdate(pos, Blocks.DIRT.defaultBlockState());
+                level.setBlockAndUpdate(pos, Blocks.DIRT.defaultBlockState());
                 BlockPos up = pos.above();
-                if (world.getBlockState(up).isAir()) {
-                    world.setBlockAndUpdate(up,Blocks.FIRE.defaultBlockState());
+                if (level.getBlockState(up).isAir()) {
+                    level.setBlockAndUpdate(up,Blocks.FIRE.defaultBlockState());
                 }
             } else {
-                if (dark && CursedEarthConfig.GENERAL.naturallySpreads.get() && world.getBlockState(pos.above()).isAir()) {
+                if (dark && CursedEarthConfig.GENERAL.naturallySpreads.get() && level.getBlockState(pos.above()).isAir()) {
                     BlockState blockstate = this.defaultBlockState();
                     for (int i = 0; i < 4; ++i) {
                         BlockPos pos1 = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
-                        if (world.getBlockState(pos1).is(CursedEarth.spreadable) && world.getBlockState(pos1.above()).isAir()) {
-                            world.setBlockAndUpdate(pos1, blockstate.setValue(SNOWY, world.getBlockState(pos1.above()).getBlock() == Blocks.SNOW));
+                        if (level.getBlockState(pos1).is(CursedEarth.spreadable) && level.getBlockState(pos1.above()).isAir()) {
+                            level.setBlockAndUpdate(pos1, blockstate.setValue(SNOWY, level.getBlockState(pos1.above()).getBlock() == Blocks.SNOW));
                         }
                     }
                 }
             }
 
             //dont spawn in water
-            if (!world.getFluidState(pos.above()).isEmpty()) return;
+            if (!level.getFluidState(pos.above()).isEmpty()) return;
             //don't spawn in peaceful
-            if (world.getLevelData().getDifficulty() == Difficulty.PEACEFUL) return;
+            if (level.getLevelData().getDifficulty() == Difficulty.PEACEFUL) return;
             int r = CursedEarthConfig.GENERAL.spawnRadius.get();
-            if (world.getEntitiesOfClass(Player.class, new AABB(-r, -r, -r, r, r, r)).size() > 0)
+            if (level.getEntitiesOfClass(Player.class, new AABB(-r, -r, -r, r, r, r)).size() > 0)
                 return;
-            Entity en = findMonsterToSpawn(world, pos.above(), random);
+            Entity en = findMonsterToSpawn(level, pos.above(), random);
             if (en != null) {
                 en.setPos(pos.getX() + .5, pos.getY() + 1, pos.getZ() + .5);
-                if (!world.noCollision(en) || !world.isUnobstructed(en)) return;
-                world.addFreshEntity(en);
+                if (!level.noCollision(en) || !level.isUnobstructed(en)) return;
+                level.addFreshEntity(en);
             }
         }
     }
@@ -132,28 +106,27 @@ public class CursedEarthBlock extends GrassBlock {
         return false;//no
     }
 
-    private Entity findMonsterToSpawn(ServerLevel world, BlockPos pos, RandomSource rand) {
+    private Entity findMonsterToSpawn(ServerLevel level, BlockPos pos, RandomSource rand) {
         //required to account for structure based mobs such as wither skeletons, remove blacklisted entities here, so they don't slow down spawning
-        ServerChunkCache s = world.getChunkSource();
-        List<MobSpawnSettings.SpawnerData> spawnOptions = s.getGenerator().getMobsAt(world.getBiome(pos), world.structureManager(), MobCategory.MONSTER, pos)
+        ServerChunkCache s = level.getChunkSource();
+        List<MobSpawnSettings.SpawnerData> spawnOptions = s.getGenerator().getMobsAt(level.getBiome(pos), level.structureManager(), MobCategory.MONSTER, pos)
                 .unwrap().stream().filter(spawners -> !spawners.type.is(CursedEarth.blacklisted_entities)).toList();
         //there is nothing to spawn
         if (spawnOptions.size() == 0) {
             return null;
         }
 
-
         int found = rand.nextInt(spawnOptions.size());
         MobSpawnSettings.SpawnerData entry = spawnOptions.get(found);
-        //can the mob actually spawn here naturally, filters out mobs such as slimes which have more specific spawn requirements but
-        // still show up in spawnlist; ignore them when force spawning
-        if (!SpawnPlacements.checkSpawnRules(entry.type, world, MobSpawnType.NATURAL, pos, world.random)
-                && !CursedEarthConfig.GENERAL.forceSpawn.get())
-            return null;
+
+        // Checks if the mob can spawn here in chunk generation naturally to filter out some mobs which don't.
+        if (!SpawnPlacements.checkSpawnRules(entry.type, level, MobSpawnType.CHUNK_GENERATION, pos, level.random)
+                && !CursedEarthConfig.GENERAL.forceSpawn.get()) { return null; }
+
         EntityType<?> type = entry.type;
-        Entity ent = type.create(world);
+        Entity ent = type.create(level);
         if (ent instanceof Mob)
-            ((Mob) ent).finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null);
+            ((Mob) ent).finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null);
         return ent;
     }
 }

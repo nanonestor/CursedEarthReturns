@@ -55,7 +55,7 @@ public class CursedEarthConfig {
 
             minTickTime = builder
                     .comment("minimum time between spawns in ticks")
-                    .defineInRange("min tick time", 75, 1, Integer.MAX_VALUE);
+                    .defineInRange("min tick time", 100, 1, Integer.MAX_VALUE);
             maxTickTime = builder
                     .comment("maximum time between spawns in ticks")
                     .defineInRange("max tick time", 600, 1, Integer.MAX_VALUE);
@@ -79,12 +79,10 @@ public class CursedEarthConfig {
                     .defineInRange("spawn radius", 1, 1, Integer.MAX_VALUE);
             cursedItem = builder
                     .comment("item used to create cursed earth")
-                    .define("cursed item", BuiltInRegistries.ITEM.getKey(Items.WITHER_ROSE).toString()); //, o -> o instanceof String s&&
-                         //   BuiltInRegistries.ITEM.getOptional(new ResourceLocation(s).isPresent());
+                    .define("cursed item", BuiltInRegistries.ITEM.getKey(Items.WITHER_ROSE).toString());
             blessedItem = builder
                     .comment("item used to create blessed earth")
-                    .define("blessed item", ("cursedearth:blessed_flower"), o -> o instanceof String); //&&
-                          //  BuiltInRegistries.ITEM.getOptional(ResourceLocation.tryParse(MODID)).isPresent());
+                    .define("blessed item", ("cursedearth:blessed_flower"), o -> o instanceof String);
 
             builder.pop();
     }

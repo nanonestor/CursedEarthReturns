@@ -19,7 +19,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -28,14 +27,11 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.registries.*;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
-
-import java.util.Objects;
 
 @Mod(CursedEarth.MODID)
 public class CursedEarth {
@@ -71,6 +67,7 @@ public class CursedEarth {
         }
         modEventBus.addListener(this::blocks);
         NeoForge.EVENT_BUS.addListener(this::rose);
+        NeoForge.EVENT_BUS.register(new MessageSpawns());
         CREATIVE_MODE_TABS.register(modEventBus);
     }
 

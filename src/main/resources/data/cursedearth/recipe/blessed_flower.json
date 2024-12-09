@@ -1,5 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
+  "category": "misc",
   "pattern": [
     "FFF",
     "FWF",
@@ -14,7 +15,7 @@
     }
   },
   "result": {
-    "item": "cursedearth:blessed_flower",
-    "count": 1
+    "id": "cursedearth:blessed_flower",
+    "count": 2
   }
 }
