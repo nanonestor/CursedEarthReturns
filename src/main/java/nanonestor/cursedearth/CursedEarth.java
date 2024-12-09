@@ -20,7 +20,6 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -127,7 +126,7 @@ public class CursedEarth {
 
             minTickTime = builder
                     .comment("minimum time between spawns in ticks")
-                    .defineInRange("min tick time", 75, 1, Integer.MAX_VALUE);
+                    .defineInRange("min tick time", 100, 1, Integer.MAX_VALUE);
             maxTickTime = builder
                     .comment("maximum time between spawns in ticks")
                     .defineInRange("max tick time", 600, 1, Integer.MAX_VALUE);
