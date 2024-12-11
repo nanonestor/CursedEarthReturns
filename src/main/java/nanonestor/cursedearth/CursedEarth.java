@@ -3,8 +3,6 @@ package nanonestor.cursedearth;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColor;
 import net.minecraft.client.color.block.BlockColors;
-import net.minecraft.client.color.item.ItemColor;
-import net.minecraft.client.color.item.ItemColors;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
@@ -20,7 +18,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
@@ -58,9 +55,6 @@ public class CursedEarth {
                 output.accept(CursedEarth.blessed_earth_item.get().getDefaultInstance());
                 output.accept(CursedEarth.blessed_flower_item.get().getDefaultInstance());
             }).build());
-
-
-
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     public static final DeferredBlock<Block> cursed_earth = BLOCKS.registerBlock("cursed_earth", CursedEarthBlock::new, BlockBehaviour.Properties.ofFullCopy(Blocks.GRASS_BLOCK));
@@ -140,20 +134,22 @@ public class CursedEarth {
             blockColors.register(iBlockColor, CursedEarth.cursed_earth.get());
             blockColors.register(jBlockColor, CursedEarth.blessed_earth.get());
 
-            ItemColors cursed_itemColors = Minecraft.getInstance().getItemColors();
-            ItemColors blessed_itemColors = Minecraft.getInstance().getItemColors();
 
-            final ItemColor cursed_itemBlockColor = (stack, tintIndex) -> {
-                final BlockState state = ((BlockItem) stack.getItem()).getBlock().defaultBlockState();
-                return blockColors.getColor(state, null, null, tintIndex);
-            };
-            final ItemColor blessed_itemBlockColor = (stack, tintIndex) -> {
-                final BlockState state = ((BlockItem) stack.getItem()).getBlock().defaultBlockState();
-                return blockColors.getColor(state, null, null, tintIndex);
-            };
+         // The following was changed by Mojang in 1.21.4 to now be set by the new client_item data driven system - and set using tint.
+         //   ItemColors cursed_itemColors = Minecraft.getInstance().getItemColors();
+         //   ItemColors blessed_itemColors = Minecraft.getInstance().getItemColors();
 
-            cursed_itemColors.register(cursed_itemBlockColor, CursedEarth.cursed_earth);
-            blessed_itemColors.register(blessed_itemBlockColor, CursedEarth.blessed_earth);
+         //   final ItemColor cursed_itemBlockColor = (stack, tintIndex) -> {
+         //       final BlockState state = ((BlockItem) stack.getItem()).getBlock().defaultBlockState();
+         //       return blockColors.getColor(state, null, null, tintIndex);
+         //   };
+          //  final ItemColor blessed_itemBlockColor = (stack, tintIndex) -> {
+          //      final BlockState state = ((BlockItem) stack.getItem()).getBlock().defaultBlockState();
+          //      return blockColors.getColor(state, null, null, tintIndex);
+         //   };
+
+         //   cursed_itemColors.register(cursed_itemBlockColor, CursedEarth.cursed_earth);
+         //   blessed_itemColors.register(blessed_itemBlockColor, CursedEarth.blessed_earth);
         }
     }
 

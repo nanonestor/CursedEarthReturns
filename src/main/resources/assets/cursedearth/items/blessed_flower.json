@@ -1,0 +1,7 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "cursedearth:item/blessed_flower",
+    "render_type": "cutout_block"
+  }
+}
