@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "F": "#minecraft:flowers",
+    "F": "#minecraft:small_flowers",
     "W": "minecraft:wither_rose"
   },
   "pattern": [
